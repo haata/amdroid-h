@@ -8,11 +8,102 @@ import com.sound.ampache.objects.*;
 public class ampacheCommunicator
 {
 
-    private fetch(String type, String filter) {
+    private ArrayList<ampacheObject> fetch(String type, String filter) {
+	ArrayList<ampacheObject> data = new ArrayList();
 
+	if (type.equals("artists")) {
+	    
+	}
+	return data;
     }
-    
-    
+
+    private class ampacheArtistParser extends DefaultHandler {
+	private ArrayList<Artist> data = new ArrayList();
+	private Artist current;
+	private CharArrayWriter contents = new CharArrayWriter();
+        public void ampacheBrowsableParser(String baseElement) {
+
+        }
+
+        public void startDocument() throws SAXException {
+
+        }
+
+        public void endDocument() throws SAXException {
+
+        }
+
+        public void startElement( String namespaceURI,
+                                  String localName,
+                                  String qName,
+                                  Attributes attr) throws SAXException {
+
+            if (localName.equals("artist")) {
+                current = new Artist();
+                current.id = attr.getValue("id");
+            }
+
+            contents.reset();
+        }
+
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+
+            if (localName.equals("name")) {
+                current.name = contents.toString();
+            }
+	}
+
+        public void characters( char[] ch, int start, int length )throws SAXException {
+            contents.write( ch, start, length );
+        }
+    }
+
+    private class ampacheAlbumParser extends DefaultHandler {
+        private ArrayList<Album> data = new ArrayList();
+        private Album current;
+        private CharArrayWriter contents = new CharArrayWriter();
+        public void ampacheBrowsableParser(String baseElement) {
+
+        }
+
+        public void startDocument() throws SAXException {
+
+        }
+
+        public void endDocument() throws SAXException {
+
+        }
+
+        public void startElement( String namespaceURI,
+                                  String localName,
+                                  String qName,
+                                  Attributes attr) throws SAXException {
+
+            if (localName.equals("album")) {
+                current = new Album();
+                current.id = attr.getValue("id");
+            }
+
+            contents.reset();
+        }
+
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+
+            if (localName.equals("name")) {
+                current.name = contents.toString();
+            }
+        }
+
+        public void characters( char[] ch, int start, int length )throws SAXException {
+            contents.write( ch, start, length );
+        }
+    }
+
+
     private class ampacheSongParser extends DefaultHandler {
 	private ArrayList<Song> data = new ArrayList();
 	private Song current;
@@ -52,7 +143,7 @@ public class ampacheCommunicator
 	    }
 
 	    if (localName.equals("title")) {
-		current.title = contents.toString();
+		current.name = contents.toString();
 	    }
 
 	    if (localName.equals("artist")) {
