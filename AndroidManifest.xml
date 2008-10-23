@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.sound.ampache"
+      android:versionCode="1"
+      android:versionName="1.0.0">
+    <application android:label="@string/app_name">
+        <activity android:name="collectionActivity"
+                  android:label="@string/collection_label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="prefsActivity"
+                  android:label="@string/prefs_name">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="andriod.intent.category.PREFERENCE" />
+            </intent-filter>
+        </activity>
+        <activity android:name="playlistActivity"
+                  android:label="@string/play_name">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest> 
