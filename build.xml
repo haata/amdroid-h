@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <project name="amdroid" default="debug">
     <!-- SDK Locations -->
-    <property name="sdk-folder" value="/opt/dev/android-sdk-linux_x86-1.0_r1" />
-    <property name="android-tools" value="/opt/dev/android-sdk-linux_x86-1.0_r1/tools" />
+    <property name="sdk-folder" value="../../" />
+    <property name="android-tools" value="../../tools" />
     
     <!-- Application Package Name -->
     <property name="application-package" value="com.sound.ampache" />
