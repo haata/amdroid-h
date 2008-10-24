@@ -15,13 +15,15 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import java.util.List;
 import java.util.ArrayList;
-import java.net.*;
 import java.io.*;
-
+import com.sound.ampache.ampacheCommunicator;
+import com.sound.ampache.objects.*;
 
 public final class collectionActivity extends ListActivity
 {
     
+    ampacheCommunicator comm;
+    List myList;
 
     /** Called when the activity is first created. */
     @Override
@@ -30,6 +32,18 @@ public final class collectionActivity extends ListActivity
         super.onCreate(savedInstanceState);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        
+        try {
+            comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this));
+            comm.perform_auth_request();
+            myList = comm.fetch("artists", "");
+        } catch (Exception poo) {
+            Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
+        }
+        
+        /* Toast.makeText(this, myList.size(), Toast.LENGTH_LONG).show();  */
+
+        /* setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList)); */
         
         setListAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, strings));
 
@@ -79,7 +93,7 @@ public final class collectionActivity extends ListActivity
             Intent playIntent = new Intent().setClass(this, playlistActivity.class);
             startActivity(playIntent);
             return true;
-        case R.id.collection:
+            /*        case R.id.collection:
             try {
                 URL myurl = new URL("http://lt-dan.sandbenders.org/");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(myurl.openStream()));
@@ -87,15 +101,7 @@ public final class collectionActivity extends ListActivity
             } catch (java.io.IOException exc) {
                 Toast.makeText(this, exc.toString(), Toast.LENGTH_SHORT).show();
             }
-            return true;
-        }
-        MediaPlayer mp = new MediaPlayer();
-        try {
-            mp.setDataSource("http://lt-dan.sandbenders.org/ampache/play/index.php?song=18548&uid=2&sid=0145935e8732f0cc21407a3b5e451ed9&name=/The%20%20Rapture%20-%20First%20Gear.mp3");
-            mp.prepare();
-            mp.start();
-        } catch (java.io.IOException blah) {
-            Toast.makeText(this, blah.toString(), Toast.LENGTH_SHORT).show();
+            return true;*/
         }
         Toast.makeText(this, item.getTitle(), Toast.LENGTH_SHORT).show();
         return true;
@@ -106,6 +112,7 @@ public final class collectionActivity extends ListActivity
         inflater.inflate(R.menu.menu, menu);
         return true;
     }
-
+    
     private String[] strings = {"1", "2", "3", "4"};
+
 }
