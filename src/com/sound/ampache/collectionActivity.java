@@ -60,10 +60,10 @@ public final class collectionActivity extends ListActivity
         Intent intent = new Intent().setClass(this, collectionActivity.class);
         if (val.type.equals("artist")) {
             String[] dir = {"artist_albums", val.id};
-            intent = intent.putExtra("directive", dir);
+            intent = intent.putExtra("directive", dir).putExtra("title", "Artist: " + val.toString());
         } else if (val.type.equals("album")) {
             String[] dir = {"album_songs", val.id};
-            intent = intent.putExtra("directive", dir);
+            intent = intent.putExtra("directive", dir).putExtra("title", "Album: " + val.toString());
         } else if (val.type.equals("song")) {
             amdroid.playlistCurrent.add((Song) val);
             return;

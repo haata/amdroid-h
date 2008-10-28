@@ -270,6 +270,14 @@ public class ampacheCommunicator
             if (localName.equals("url")) {
                 current.url = contents.toString();
             }
+
+            if (localName.equals("album")) {
+                current.album = contents.toString();
+            }
+
+            if (localName.equals("genre")) {
+                current.genre = contents.toString();
+            }
         }
         
         public void characters( char[] ch, int start, int length )throws SAXException {
