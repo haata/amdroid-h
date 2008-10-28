@@ -63,14 +63,18 @@ public class ampacheCommunicator
         artists = hand.artists;
     }
 
-    public List fetch(String type, String filter) throws Exception{
-        ArrayList<ampacheObject> data;
-        dataHandler hand = new dataHandler();
+    public ArrayList fetch(String type, String filter) throws Exception{
+        dataHandler hand;
         String append = "";
 
         if (type.equals("artists")) {
-            append = "action=artists&auth=" + authToken + "&limit=50";
+            append = "action=artists&auth=" + authToken;
             hand = new ampacheArtistParser();
+        } else if (type.equals("artist_albums")) {
+            append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
+            hand = new ampacheAlbumParser();
+        } else {
+            return new ArrayList();
         }
         
         reader.setContentHandler(hand);
@@ -85,8 +89,7 @@ public class ampacheCommunicator
     }
 
     private class dataHandler extends DefaultHandler {
-        public ArrayList data;
-
+        public ArrayList data = new ArrayList();
     }
     private class ampacheAuthParser extends DefaultHandler {
         public String token = "";
@@ -94,7 +97,7 @@ public class ampacheCommunicator
         private CharArrayWriter contents = new CharArrayWriter();
 
         public void startDocument() throws SAXException {
-
+            
         }
 
         public void endDocument() throws SAXException {
@@ -128,9 +131,9 @@ public class ampacheCommunicator
     }
     
     private class ampacheArtistParser extends dataHandler {
-        private ArrayList<ampacheObject> data = new ArrayList();
         private Artist current;
         private CharArrayWriter contents = new CharArrayWriter();
+
         public void ampacheBrowsableParser(String baseElement) {
             
         }
@@ -163,15 +166,19 @@ public class ampacheCommunicator
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
+
+            if (localName.equals("artist")) {
+                data.add(current);
+            }
+
         }
         
-        public void characters( char[] ch, int start, int length )throws SAXException {
+        public void characters( char[] ch, int start, int length ) throws SAXException {
             contents.write( ch, start, length );
         }
     }
     
-    private class ampacheAlbumParser extends DefaultHandler {
-        private ArrayList<Album> data = new ArrayList();
+    private class ampacheAlbumParser extends dataHandler {
         private Album current;
         private CharArrayWriter contents = new CharArrayWriter();
         public void ampacheBrowsableParser(String baseElement) {
@@ -205,6 +212,9 @@ public class ampacheCommunicator
             
             if (localName.equals("name")) {
                 current.name = contents.toString();
+            }
+            if (localName.equals("album")) {
+                data.add(current);
             }
         }
         

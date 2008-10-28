@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.io.*;
 import com.sound.ampache.ampacheCommunicator;
 import com.sound.ampache.objects.*;
+import java.lang.Integer;
 
 public final class collectionActivity extends ListActivity
 {
@@ -31,21 +32,37 @@ public final class collectionActivity extends ListActivity
     {
         super.onCreate(savedInstanceState);
 
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        ArrayList<ampacheObject> myList = new ArrayList();
+
+        Intent intent = getIntent();
+
+        String[] directive;
+        directive = intent.getStringArrayExtra("directive");
+
+        if (directive == null) {
+            directive = new String[2];
+            directive[0] = "artists";
+            directive[1] =  "";
+            PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         
+            try {
+                comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this));
+                comm.perform_auth_request();
+            } catch (Exception poo) {
+                Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
+            }
+        }
+
         try {
-            comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this));
-            comm.perform_auth_request();
-            myList = comm.fetch("artists", "");
+            myList = comm.fetch(directive[0], directive[1]);
         } catch (Exception poo) {
             Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
         }
-        
-        /* Toast.makeText(this, myList.size(), Toast.LENGTH_LONG).show();  */
+        //Toast.makeText(this, Integer.toString(myList.size()), Toast.LENGTH_LONG).show();
 
-        /* setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList)); */
+        setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
         
-        setListAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, strings));
+        //setListAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, strings));
 
         /*
         Intent intent = getIntent();
@@ -77,8 +94,14 @@ public final class collectionActivity extends ListActivity
         } */
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        String val = (String) l.getItemAtPosition(position);
-        Toast.makeText(this, val, Toast.LENGTH_SHORT).show();
+        ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
+        //Toast.makeText(this, val.toString(), Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent().setClass(this, collectionActivity.class);
+        if (val.type.equals("artist")) {
+            String[] dir = {"artist_albums", val.id};
+            intent.putExtra("directive", dir);
+        }
+        startActivity(intent);
     }
 
     @Override
