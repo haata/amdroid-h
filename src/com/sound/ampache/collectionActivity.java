@@ -23,8 +23,7 @@ import java.lang.Integer;
 public final class collectionActivity extends ListActivity
 {
     
-    ampacheCommunicator comm;
-    List myList;
+    private List myList;
 
     /** Called when the activity is first created. */
     @Override
@@ -43,63 +42,31 @@ public final class collectionActivity extends ListActivity
             directive = new String[2];
             directive[0] = "artists";
             directive[1] =  "";
-            PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-        
-            try {
-                comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this));
-                comm.perform_auth_request();
-            } catch (Exception poo) {
-                Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
-            }
         }
 
         try {
-            myList = comm.fetch(directive[0], directive[1]);
+            myList = amdroid.comm.fetch(directive[0], directive[1]);
         } catch (Exception poo) {
             Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
         }
-        //Toast.makeText(this, Integer.toString(myList.size()), Toast.LENGTH_LONG).show();
-
+        
+        /* set up our list adapter to handle the data */
         setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
         
-        //setListAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, strings));
-
-        /*
-        Intent intent = getIntent();
-        String path = intent.getStringExtra("com.sound.apache.Path");
-
-        if (path == null) {
-            path = "";
-        }
-
-        
-        setListAdapter(new SimpleAdapter( this, getData(path),
-                                          android.R.layout.simple_list_item_1, 
-                                          new String[] { "title" },
-                                          new int[] { android.R.id.text1 }));
-        */
     }
-
-    
-
-    /*
-    protected List getData(String prefix) {
-        List<String> data = new ArrayList<String>();
-        int len = strings.size();
-        for (int i = 0; i < len; i++) {
-            String str = strings[i];
-            addItem(data, str);
-        }
-    
-        } */
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
-        //Toast.makeText(this, val.toString(), Toast.LENGTH_SHORT).show();
         Intent intent = new Intent().setClass(this, collectionActivity.class);
         if (val.type.equals("artist")) {
             String[] dir = {"artist_albums", val.id};
-            intent.putExtra("directive", dir);
+            intent = intent.putExtra("directive", dir);
+        } else if (val.type.equals("album")) {
+            String[] dir = {"album_songs", val.id};
+            intent = intent.putExtra("directive", dir);
+        } else if (val.type.equals("song")) {
+            amdroid.playlistCurrent.add((Song) val);
+            return;
         }
         startActivity(intent);
     }
@@ -116,17 +83,7 @@ public final class collectionActivity extends ListActivity
             Intent playIntent = new Intent().setClass(this, playlistActivity.class);
             startActivity(playIntent);
             return true;
-            /*        case R.id.collection:
-            try {
-                URL myurl = new URL("http://lt-dan.sandbenders.org/");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(myurl.openStream()));
-                Toast.makeText(this, reader.readLine(), Toast.LENGTH_SHORT).show();
-            } catch (java.io.IOException exc) {
-                Toast.makeText(this, exc.toString(), Toast.LENGTH_SHORT).show();
-            }
-            return true;*/
         }
-        Toast.makeText(this, item.getTitle(), Toast.LENGTH_SHORT).show();
         return true;
     }
 

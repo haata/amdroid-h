@@ -5,18 +5,29 @@ import android.app.ListActivity;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
 import android.widget.MediaController;
+import android.widget.MediaController.MediaPlayerControl;
+import com.sound.ampache.objects.Song;
+import android.media.MediaPlayer.OnBufferingUpdateListener;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.widget.Toast;
 
-public final class playlistActivity extends ListActivity
+public final class playlistActivity extends ListActivity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener
 {
 
     private MediaPlayer mp;
     private MediaController mc;
 
     private int playingIndex;
+    private int bufferPC;
     private Boolean playing;
+
+    private prevList prev = new prevList();
+
+    private nextList next = new nextList();
 
     @Override
     public void onCreate(Bundle savedInstanceState) 
@@ -24,25 +35,90 @@ public final class playlistActivity extends ListActivity
         super.onCreate(savedInstanceState);
 
         mp = new MediaPlayer();
+        mp.setOnBufferingUpdateListener(this);
         
-        mc = new MediaController(this);
+        mc = new MediaController(this, false);
 
         mc.setAnchorView(this.getListView());
         mc.setEnabled(true);
+        mc.setPrevNextListeners(next, prev);
 
-        setListAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, songs));
+        mc.setMediaPlayer(this);
 
+        setListAdapter(new ArrayAdapter<Song> (this, android.R.layout.simple_list_item_1, amdroid.playlistCurrent));
+
+        //mc.show();
     }
 
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        playingIndex = position;
+    private class prevList implements OnClickListener
+    {
+        public void onClick(View v) {
+            playingIndex--;
+            play();
+        }
+    }
+
+    private class nextList implements OnClickListener
+    {
+        public void onClick(View v) {
+            playingIndex++;
+            play();
+        }
+    }
+    
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        bufferPC = percent;
+    }
+
+    public int getBufferPercentage() {
+        return bufferPC;
+    }
+
+    public int getCurrentPosition() {
+        return mp.getCurrentPosition();
+    }
+
+    public int getDuration() {
+        return mp.getDuration();
+    }
+
+    public boolean isPlaying() {
+        return mp.isPlaying();
+    }
+
+    public void pause() {
+        mp.pause();
+    }
+
+    public void seekTo(int pos) {
+        mp.seekTo(pos);
+    }
+
+    public void start() {
+        mp.start();
+    }
+
+    public void play() {
+        if (playingIndex >= amdroid.playlistCurrent.size()) {
+            playingIndex = amdroid.playlistCurrent.size();
+            mc.hide();
+            return;
+        }
+        
+        if (playingIndex < 0) {
+            playingIndex = 0;
+            return;
+        }
+
+        Song chosen = (Song) amdroid.playlistCurrent.get(playingIndex);
+
         if (mp.isPlaying()) {
             mp.stop();
         }
-
+        
         mp.reset();
         try {
-            mp.setDataSource(urls[position]);
+            mp.setDataSource(chosen.url);
             mp.prepare();
         } catch (java.io.IOException blah) {
             return;
@@ -50,20 +126,15 @@ public final class playlistActivity extends ListActivity
         mp.start();
     }
 
-    private String[] songs = {"The Rapture - Don Gon Do It", "The Rapture - Pieces Of The People We Love"};
-    private String[] urls = {"http://lt-dan.sandbenders.org/ampache/play/index.php?song=18549&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Don%20Gon%20Do%20It.mp3", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18540&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Pieces%20Of%20The%20People%20We%20Love.mp3"};
+    public void onCompletion(MediaPlayer media) {
+        playingIndex++;
+        play();
+    }
 
-    /*
-    songs = {
-        {"The Rapture - Don Gon Do It", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18549&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Don%20Gon%20Do%20It.mp3"},
-        {"The Rapture - Pieces Of The People We Love", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18540&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Pieces%20Of%20The%20People%20We%20Love.mp3"},
-        {"The Rapture - Get Myself Into It", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18547&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Get%20Myself%20Into%20It.mp3"},
-        {"The Rapture - First Gear", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18548&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20First%20Gear.mp3"},
-        {"The Rapture - The Devil", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18545&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20The%20Devil.mp3"},
-        {"The Rapture - Whoo! Alright - Yeah...Uh Huh", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18542&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Whoo%21%20Alright%20-%20Yeah...Uh%20Huh.mp3"},
-        {"The Rapture - Calling Me", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18544&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Calling%20Me.mp3"},
-        {"The Rapture - Down For So Long", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18543&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Down%20For%20So%20Long.mp3"},
-        {"The Rapture - The Sound", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18541&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20The%20Sound.mp3"},
-        {"The Rapture - Live In Sunshine", "http://lt-dan.sandbenders.org/ampache/play/index.php?song=18546&uid=2&sid=4d75504d2ed715a136065e7bb99c4962&name=/The%20%20Rapture%20-%20Live%20In%20Sunshine.mp3"}}
-    */
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        playingIndex = position;
+        play();
+        mc.show(0);
+    }
+
 }

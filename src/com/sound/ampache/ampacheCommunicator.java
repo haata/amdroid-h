@@ -33,6 +33,13 @@ public class ampacheCommunicator
         reader = XMLReaderFactory.createXMLReader();
     }
 
+    ampacheCommunicator(SharedPreferences preferences, String tok) throws Exception {
+        prefs = preferences;
+        authToken = tok;
+        System.setProperty("org.xml.sax.driver","org.xmlpull.v1.sax2.Driver");
+        reader = XMLReaderFactory.createXMLReader();
+    }
+
     public void perform_auth_request() throws Exception {
         MessageDigest md = MessageDigest.getInstance("MD5");
         /* Get the current time, and convert it to a string */
@@ -40,14 +47,9 @@ public class ampacheCommunicator
         
         /* build our passphrase hash */
         md.reset();
-        /*prefs.getString("server_password_preference", "LetMeIn!")).getBytes()); */
-        /*asHex(md.digest((time + "Blah!").getBytes())); */
         String preHash = time + prefs.getString("server_password_preference", "");
-        /* String preHash = "test"; */
         md.update(preHash.getBytes(), 0, preHash.length());
         String hash = asHex(md.digest());
-        /*String hash = new BigInteger(1,md.digest()).toString(16); */
-
         
         /* request server auth */
         ampacheAuthParser hand = new ampacheAuthParser();
@@ -68,11 +70,14 @@ public class ampacheCommunicator
         String append = "";
 
         if (type.equals("artists")) {
-            append = "action=artists&auth=" + authToken;
+            append = "action=artists&auth=" + authToken; // + "&limit=50";
             hand = new ampacheArtistParser();
         } else if (type.equals("artist_albums")) {
             append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheAlbumParser();
+        } else if (type.equals("album_songs")) {
+            append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
+            hand = new ampacheSongParser();
         } else {
             return new ArrayList();
         }
@@ -134,10 +139,6 @@ public class ampacheCommunicator
         private Artist current;
         private CharArrayWriter contents = new CharArrayWriter();
 
-        public void ampacheBrowsableParser(String baseElement) {
-            
-        }
-        
         public void startDocument() throws SAXException {
             
         }
@@ -181,9 +182,6 @@ public class ampacheCommunicator
     private class ampacheAlbumParser extends dataHandler {
         private Album current;
         private CharArrayWriter contents = new CharArrayWriter();
-        public void ampacheBrowsableParser(String baseElement) {
-            
-        }
         
         public void startDocument() throws SAXException {
             
@@ -224,14 +222,9 @@ public class ampacheCommunicator
     }
     
 
-    private class ampacheSongParser extends DefaultHandler {
-        private ArrayList<Song> data = new ArrayList();
+    private class ampacheSongParser extends dataHandler {
         private Song current;
         private CharArrayWriter contents = new CharArrayWriter();
-        
-        public void ampacheBrowsableParser(String baseElement) {
-            
-        }
         
         public void startDocument() throws SAXException {
             
