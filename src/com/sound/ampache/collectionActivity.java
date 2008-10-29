@@ -3,15 +3,20 @@ package com.sound.ampache;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.widget.ListView;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Toast;
+import android.widget.TextView;
+import android.widget.ImageButton;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import java.util.List;
 import java.util.ArrayList;
@@ -23,7 +28,7 @@ import java.lang.Integer;
 public final class collectionActivity extends ListActivity
 {
     
-    private List myList;
+    private ArrayList<ampacheObject> myList;
 
     /** Called when the activity is first created. */
     @Override
@@ -51,8 +56,8 @@ public final class collectionActivity extends ListActivity
         }
         
         /* set up our list adapter to handle the data */
-        setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
-        
+        //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
+        setListAdapter(new collectionAdapter(this));
     }
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -92,7 +97,50 @@ public final class collectionActivity extends ListActivity
         inflater.inflate(R.menu.menu, menu);
         return true;
     }
-    
-    private String[] strings = {"1", "2", "3", "4"};
 
+    private class collectionAdapter extends BaseAdapter
+    {
+	private LayoutInflater mInflater;
+
+        public collectionAdapter(Context context) {
+            mInflater = LayoutInflater.from(context);
+        }
+
+        public int getCount() {
+            return myList.size();
+        }
+
+        public Object getItem(int position) {
+            return myList.get(position);
+        }
+
+        public long getItemId(int position) {
+            return position;
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            bI holder;
+            ampacheObject cur = myList.get(position);
+            
+            /* we don't reuse */
+            if (convertView == null) {
+                convertView = mInflater.inflate(R.layout.browsable_item, null);
+                holder = new bI();
+		
+                holder.title = (TextView) convertView.findViewById(R.id.title);
+		holder.add = (ImageButton) convertView.findViewById(R.id.add);
+		convertView.setTag(holder);
+	    } else {
+		holder = (bI) convertView.getTag();
+	    }
+            
+	    holder.title.setText(cur.toString());
+	    return convertView;
+	}
+    }
+    
+    static class bI {
+	TextView title;
+	ImageButton add;
+    }
 }
