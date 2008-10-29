@@ -18,7 +18,7 @@ public final class amdroid extends Application {
     public void onCreate() {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         try {
-            comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this));
+            comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this), this);
             comm.perform_auth_request();
         } catch (Exception poo) {
             

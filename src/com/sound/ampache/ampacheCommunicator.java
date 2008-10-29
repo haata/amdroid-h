@@ -7,6 +7,7 @@ import org.xml.sax.helpers.*;
 import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.content.SharedPreferences;
+import android.content.Context;
 import android.preference.PreferenceManager;
 import java.io.*;
 import java.net.*;
@@ -22,20 +23,16 @@ public class ampacheCommunicator
 
     public String authToken = "";
     private int artists;
+    private String update;
+    private Context mCtxt;
 
     private XMLReader reader;
 
     private SharedPreferences prefs;
 
-    ampacheCommunicator(SharedPreferences preferences) throws Exception {
+    ampacheCommunicator(SharedPreferences preferences, Context context) throws Exception {
         prefs = preferences;
-        System.setProperty("org.xml.sax.driver","org.xmlpull.v1.sax2.Driver");
-        reader = XMLReaderFactory.createXMLReader();
-    }
-
-    ampacheCommunicator(SharedPreferences preferences, String tok) throws Exception {
-        prefs = preferences;
-        authToken = tok;
+        mCtxt = context;
         System.setProperty("org.xml.sax.driver","org.xmlpull.v1.sax2.Driver");
         reader = XMLReaderFactory.createXMLReader();
     }
@@ -63,6 +60,7 @@ public class ampacheCommunicator
 
         authToken = hand.token;
         artists = hand.artists;
+        update = hand.update;
     }
 
     public ArrayList fetch(String type, String filter) throws Exception{
@@ -70,7 +68,26 @@ public class ampacheCommunicator
         String append = "";
 
         if (type.equals("artists")) {
-            append = "action=artists&auth=" + authToken; // + "&limit=50";
+            boolean goodcache = true;
+
+            /*
+            try {
+                FileInputStream din = mCtxt.openFileInput("date");
+                FileInputStream cin = mCtxt.openFileInput("cache");
+                ObjectInputStream doi = new ObjectInputStream(din);
+                String cDate = (String) doi.readObject();
+                doi.close();
+                if (cDate.equals(update)) {
+                    ObjectInputStream coi = new ObjectInputStream(cin);
+                    ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
+                    coi.close();
+                    return goods;
+                }
+            } catch (Exception poo) {
+                /* cache load failed for some reason 
+            }
+            */
+            append = "action=artists&auth=" + authToken + "&limit=10";
             hand = new ampacheArtistParser();
         } else if (type.equals("artist_albums")) {
             append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
@@ -84,6 +101,23 @@ public class ampacheCommunicator
         
         reader.setContentHandler(hand);
         reader.parse(new InputSource(fetchFromServer(append)));
+
+        /*
+        if (type.equals("artists")) {
+            try {
+                /* we just did a full fetch, write the cache! 
+                FileOutputStream dot = mCtxt.openFileOutput("date", 0);
+                FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
+                ObjectOutputStream dos = new ObjectOutputStream(dot);
+                dos.writeObject(update);
+                dos.close();
+                ObjectOutputStream cos = new ObjectOutputStream(cot);
+                cos.writeObject(hand.data);
+                cos.close();
+            } catch (Exception poo) {
+                /* so much for the cache 
+            }
+        } */
 
         return hand.data;
     }
@@ -99,6 +133,7 @@ public class ampacheCommunicator
     private class ampacheAuthParser extends DefaultHandler {
         public String token = "";
         public int artists= 0;
+        public String update = "";
         private CharArrayWriter contents = new CharArrayWriter();
 
         public void startDocument() throws SAXException {
@@ -127,6 +162,10 @@ public class ampacheCommunicator
 
             if (localName.equals("artists")) {
                 artists = Integer.parseInt(contents.toString());
+            }
+
+            if (localName.equals("update")) {
+                update = contents.toString();
             }
         }
         

@@ -1,14 +1,18 @@
 package com.sound.ampache;
 
 import android.app.ListActivity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Debug;
 import android.preference.PreferenceManager;
 import android.widget.ListView;
 import android.widget.BaseAdapter;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.ImageButton;
@@ -28,20 +32,25 @@ import java.lang.Integer;
 public final class collectionActivity extends ListActivity
 {
     
-    private ArrayList<ampacheObject> myList;
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
-        ArrayList<ampacheObject> myList = new ArrayList();
+        //Debug.startMethodTracing();
+        //Debug.enableEmulatorTraceOutput();
+
+        //Debug.waitForDebugger();
+
+        ArrayList<ampacheObject> list = new ArrayList();
 
         Intent intent = getIntent();
 
         String[] directive;
         directive = intent.getStringArrayExtra("directive");
+
+        showDialog(0);
 
         if (directive == null) {
             directive = new String[2];
@@ -50,14 +59,20 @@ public final class collectionActivity extends ListActivity
         }
 
         try {
-            myList = amdroid.comm.fetch(directive[0], directive[1]);
+            list = amdroid.comm.fetch(directive[0], directive[1]);
         } catch (Exception poo) {
             Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
         }
         
         /* set up our list adapter to handle the data */
         //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
-        setListAdapter(new collectionAdapter(this));
+        setListAdapter(new collectionAdapter(this, list));
+
+        dismissDialog(0);
+    }
+
+    public void onDestroy() {
+        //Debug.stopMethodTracing();
     }
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -92,6 +107,15 @@ public final class collectionActivity extends ListActivity
         return true;
     }
 
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        ProgressDialog dialog = new ProgressDialog(this);
+        dialog.setMessage("Loading...");
+        dialog.setIndeterminate(true);
+        dialog.setCancelable(false);
+        return dialog;
+    }
+
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
@@ -100,47 +124,51 @@ public final class collectionActivity extends ListActivity
 
     private class collectionAdapter extends BaseAdapter
     {
-	private LayoutInflater mInflater;
+        private LayoutInflater mInflater;
 
-        public collectionAdapter(Context context) {
+        private ArrayList myList;
+        
+        public collectionAdapter(Context context, ArrayList list) {
             mInflater = LayoutInflater.from(context);
+            myList = list;
         }
-
+        
         public int getCount() {
             return myList.size();
         }
-
+        
         public Object getItem(int position) {
             return myList.get(position);
         }
-
+        
         public long getItemId(int position) {
             return position;
         }
-
+        
         public View getView(int position, View convertView, ViewGroup parent) {
             bI holder;
-            ampacheObject cur = myList.get(position);
+            ampacheObject cur = (ampacheObject) myList.get(position);
             
             /* we don't reuse */
             if (convertView == null) {
                 convertView = mInflater.inflate(R.layout.browsable_item, null);
                 holder = new bI();
-		
+                
                 holder.title = (TextView) convertView.findViewById(R.id.title);
-		holder.add = (ImageButton) convertView.findViewById(R.id.add);
-		convertView.setTag(holder);
-	    } else {
-		holder = (bI) convertView.getTag();
-	    }
+                //holder.add = (ImageButton) convertView.findViewById(R.id.add);
+
+                convertView.setTag(holder);
+            } else {
+                holder = (bI) convertView.getTag();
+            }
             
-	    holder.title.setText(cur.toString());
-	    return convertView;
-	}
+            holder.title.setText(cur.toString());
+            return convertView;
+        }
     }
     
     static class bI {
-	TextView title;
-	ImageButton add;
+        TextView title;
+        //ImageButton add;
     }
 }

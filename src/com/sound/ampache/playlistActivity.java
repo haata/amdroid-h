@@ -134,7 +134,7 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
         mp.reset();
         try {
             mp.setDataSource(chosen.url);
-            mp.prepare();
+            mp.prepareAsync();
         } catch (java.io.IOException blah) {
             return;
         }
