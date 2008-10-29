@@ -15,7 +15,7 @@ import android.widget.BaseAdapter;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import android.widget.TextView;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Menu;
@@ -31,6 +31,8 @@ import java.lang.Integer;
 
 public final class collectionActivity extends ListActivity
 {
+
+    ArrayList<ampacheObject> list;
     
     /** Called when the activity is first created. */
     @Override
@@ -42,8 +44,6 @@ public final class collectionActivity extends ListActivity
         //Debug.enableEmulatorTraceOutput();
 
         //Debug.waitForDebugger();
-
-        ArrayList<ampacheObject> list = new ArrayList();
 
         Intent intent = getIntent();
 
@@ -58,24 +58,35 @@ public final class collectionActivity extends ListActivity
             directive[1] =  "";
         }
 
-        try {
-            list = amdroid.comm.fetch(directive[0], directive[1]);
-        } catch (Exception poo) {
-            Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
-        }
-        
+	list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
+	if (list == null) {
+	    try {
+		list = amdroid.comm.fetch(directive[0], directive[1]);
+	    } catch (Exception poo) {
+		Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
+		list = new ArrayList();
+	    }
+	}
         /* set up our list adapter to handle the data */
         //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
+	//Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show();
+
         setListAdapter(new collectionAdapter(this, list));
 
         dismissDialog(0);
     }
-
-    public void onDestroy() {
-        //Debug.stopMethodTracing();
+    
+    protected void onSaveInstanceState(Bundle bundle) {
+	super.onSaveInstanceState(bundle);
+	//Toast.makeText(this, "Saving instance..", Toast.LENGTH_SHORT).show();
+        bundle.putSerializable("list", list);
     }
 
+
     protected void onListItemClick(ListView l, View v, int position, long id) {
+	if (l.getItemAtPosition(position) == null) {
+	    return;
+	}
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
         Intent intent = new Intent().setClass(this, collectionActivity.class);
         if (val.type.equals("artist")) {
@@ -128,9 +139,12 @@ public final class collectionActivity extends ListActivity
 
         private ArrayList myList;
         
+	private Context mCtx;
+
         public collectionAdapter(Context context, ArrayList list) {
             mInflater = LayoutInflater.from(context);
             myList = list;
+	    mCtx = context;
         }
         
         public int getCount() {
@@ -155,7 +169,7 @@ public final class collectionActivity extends ListActivity
                 holder = new bI();
                 
                 holder.title = (TextView) convertView.findViewById(R.id.title);
-                //holder.add = (ImageButton) convertView.findViewById(R.id.add);
+                holder.add = (ImageView) convertView.findViewById(R.id.add);
 
                 convertView.setTag(holder);
             } else {
@@ -163,12 +177,34 @@ public final class collectionActivity extends ListActivity
             }
             
             holder.title.setText(cur.toString());
+	    holder.add.setOnClickListener( new enqueueListener(mCtx, position));
             return convertView;
         }
     }
     
+    private class enqueueListener implements View.OnClickListener
+    {
+	int pos;
+	Context mCtx;
+	
+	public enqueueListener(Context context, int position) {
+	    mCtx = context;
+	    pos = position;
+	}
+	
+	public void onClick(View v) {
+	    ampacheObject cur = (ampacheObject) list.get(pos);
+	    Toast.makeText(mCtx, "Enqueue " + cur.type + ": " + cur.toString(), Toast.LENGTH_LONG).show();
+	    if (cur.hasChildren()) {
+		amdroid.playlistCurrent.addAll(cur.allChildren());
+	    } else {
+		amdroid.playlistCurrent.add((Song) cur);
+	    }
+	}
+    }
+
     static class bI {
         TextView title;
-        //ImageButton add;
+        ImageView add;
     }
 }

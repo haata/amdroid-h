@@ -26,17 +26,13 @@ import android.net.Uri;
 public final class playlistActivity extends ListActivity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener
 {
 
-    private MediaPlayer mp;
+   private MediaPlayer mp;
     private MediaController mc;
 
     private int playingIndex;
     private int bufferPC;
     private Boolean playing;
     private playlistAdapter pla;
-
-    private prevList prev = new prevList();
-
-    private nextList next = new nextList();
 
     @Override
     public void onCreate(Bundle savedInstanceState) 
@@ -45,12 +41,23 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
 
         mp = new MediaPlayer();
         mp.setOnBufferingUpdateListener(this);
-        
+	mp.setOnCompletionListener(this);
         mc = new MediaController(this, false);
 
-        mc.setAnchorView(this.getListView());
+	mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+		public void onPrepared(MediaPlayer mp) {
+		    mp.start();
+		}});
+
+
+	TextView menu = new TextView(this);
+	menu.setText("Menu");
+	
+	getListView().addFooterView(menu);
+
+        mc.setAnchorView(menu);
         mc.setEnabled(true);
-        mc.setPrevNextListeners(next, prev);
+        mc.setPrevNextListeners(new nextList(), new prevList());
 
         mc.setMediaPlayer(this);
 
@@ -62,7 +69,6 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
 
         //setListAdapter(new ArrayAdapter<Song> (this, android.R.layout.simple_list_item_1, amdroid.playlistCurrent));
 
-        //mc.show();
     }
 
     private class prevList implements OnClickListener
@@ -138,8 +144,8 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
         } catch (java.io.IOException blah) {
             return;
         }
-        mp.start();
         getListView().invalidateViews();
+	mc.show();
     }
 
     public void onCompletion(MediaPlayer media) {
@@ -150,7 +156,6 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
     protected void onListItemClick(ListView l, View v, int position, long id) {
         playingIndex = position;
         play();
-        mc.show(0);
     }
 
     private class playlistAdapter extends BaseAdapter
@@ -195,9 +200,12 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
             holder.title.setText(cur.name);
             holder.other.setText(cur.artist + " - " + cur.album);
             //holder.art.setImageURI(Uri.parse(cur.art));
-            if (mp.isPlaying() && playingIndex == position) {
-                holder.art.setImageResource(android.R.drawable.ic_media_play);
-            }
+            if (playingIndex == position) {
+                holder.art.setVisibility(View.VISIBLE);
+	    } else {
+		holder.art.setVisibility(View.INVISIBLE);
+	    }
+
             return convertView;
         }
     }

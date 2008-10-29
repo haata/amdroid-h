@@ -87,7 +87,7 @@ public class ampacheCommunicator
                 /* cache load failed for some reason 
             }
             */
-            append = "action=artists&auth=" + authToken + "&limit=10";
+            append = "action=artists&auth=" + authToken + "&limit=100";
             hand = new ampacheArtistParser();
         } else if (type.equals("artist_albums")) {
             append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
