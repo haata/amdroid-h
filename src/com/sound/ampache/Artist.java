@@ -2,12 +2,12 @@ package com.sound.ampache.objects;
 import java.util.ArrayList;
 
 public class Artist extends ampacheObject {
-    public Artist() {
-        type = "artist";
-    }
-
     public boolean hasChildren() {
 	return true;
+    }
+
+    public String getType() {
+	return "artist";
     }
 
     public ArrayList allChildren() {

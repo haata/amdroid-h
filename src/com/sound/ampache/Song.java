@@ -9,8 +9,8 @@ public class Song extends ampacheObject {
     public String album = "";
     public String genre = "";
 
-    public Song() {
-        type = "song";
+    public String getType() {
+	return "song";
     }
     
     public boolean hasChildren() {

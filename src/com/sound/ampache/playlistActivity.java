@@ -1,7 +1,7 @@
 package com.sound.ampache;
 
 
-import android.app.ListActivity;
+import android.app.Activity;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.ListView;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.MediaController;
@@ -23,39 +25,45 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.widget.Toast;
 import android.net.Uri;
 
-public final class playlistActivity extends ListActivity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener
+public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
 {
 
-   private MediaPlayer mp;
+    private MediaPlayer mp;
     private MediaController mc;
-
+    private ListView lv;
+    
     private int playingIndex;
     private int bufferPC;
     private Boolean playing;
     private playlistAdapter pla;
 
-    @Override
     public void onCreate(Bundle savedInstanceState) 
     {
         super.onCreate(savedInstanceState);
 
+	setContentView(R.layout.playlist);
+
         mp = new MediaPlayer();
         mp.setOnBufferingUpdateListener(this);
 	mp.setOnCompletionListener(this);
-        mc = new MediaController(this, false);
+	TextView menuText = (TextView) findViewById(R.id.menutext);
+	mc = new MediaController(this, false);
+
+	menuText.setOnClickListener(new OnClickListener() {
+		public void onClick(View v) {
+		    mc.show();
+		}});
 
 	mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
 		public void onPrepared(MediaPlayer mp) {
 		    mp.start();
+		    mc.show();
 		}});
 
+	lv = (ListView) findViewById(R.id.list);
+	lv.setOnItemClickListener(this);
 
-	TextView menu = new TextView(this);
-	menu.setText("Menu");
-	
-	getListView().addFooterView(menu);
-
-        mc.setAnchorView(menu);
+	mc.setAnchorView(menuText);
         mc.setEnabled(true);
         mc.setPrevNextListeners(new nextList(), new prevList());
 
@@ -63,17 +71,14 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
 
         pla = new playlistAdapter(this);
 
-        setListAdapter(pla);
-
-        //getListView().addFooterView(mc);
-
-        //setListAdapter(new ArrayAdapter<Song> (this, android.R.layout.simple_list_item_1, amdroid.playlistCurrent));
+        lv.setAdapter(pla);
 
     }
 
     private class prevList implements OnClickListener
     {
         public void onClick(View v) {
+	    turnOffPlayingView();
             playingIndex--;
             play();
         }
@@ -82,6 +87,7 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
     private class nextList implements OnClickListener
     {
         public void onClick(View v) {
+	    turnOffPlayingView();
             playingIndex++;
             play();
         }
@@ -96,11 +102,17 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
     }
 
     public int getCurrentPosition() {
-        return mp.getCurrentPosition();
+	if (mp.isPlaying()) {
+	    return mp.getCurrentPosition();
+	}
+	return 0;
     }
 
     public int getDuration() {
-        return mp.getDuration();
+	if (mp.isPlaying()) {
+	    return mp.getDuration();
+	}
+	return 0;
     }
 
     public boolean isPlaying() {
@@ -108,11 +120,15 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
     }
 
     public void pause() {
-        mp.pause();
+	if (mp.isPlaying()) {
+	    mp.pause();
+	}
     }
 
     public void seekTo(int pos) {
-        mp.seekTo(pos);
+	if (mp.isPlaying()) {
+	    mp.seekTo(pos);
+	}
     }
 
     public void start() {
@@ -122,7 +138,7 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
     public void play() {
         if (playingIndex >= amdroid.playlistCurrent.size()) {
             playingIndex = amdroid.playlistCurrent.size();
-            mc.hide();
+            mc.setEnabled(false);;
             return;
         }
         
@@ -144,16 +160,33 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
         } catch (java.io.IOException blah) {
             return;
         }
-        getListView().invalidateViews();
-	mc.show();
+	turnOnPlayingView();
+    }
+
+    private void turnOffPlayingView() {
+	View holder = lv.getChildAt(playingIndex);
+	if (holder != null) {
+	    ImageView img = (ImageView) holder.findViewById(R.id.art);
+	    img.setVisibility(View.INVISIBLE);
+	}
+    }
+
+    private void turnOnPlayingView() {
+	View holder = lv.getChildAt(playingIndex);
+	if (holder != null) {
+	    ImageView img = (ImageView) holder.findViewById(R.id.art);
+	    img.setVisibility(View.VISIBLE);
+	}
     }
 
     public void onCompletion(MediaPlayer media) {
+	turnOffPlayingView();
         playingIndex++;
         play();
     }
 
-    protected void onListItemClick(ListView l, View v, int position, long id) {
+    public void onItemClick(AdapterView l, View v, int position, long id) {
+	turnOffPlayingView();
         playingIndex = position;
         play();
     }
@@ -200,7 +233,7 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
             holder.title.setText(cur.name);
             holder.other.setText(cur.artist + " - " + cur.album);
             //holder.art.setImageURI(Uri.parse(cur.art));
-            if (playingIndex == position) {
+            if (mp.isPlaying() && playingIndex == position) {
                 holder.art.setVisibility(View.VISIBLE);
 	    } else {
 		holder.art.setVisibility(View.INVISIBLE);
@@ -214,7 +247,6 @@ public final class playlistActivity extends ListActivity implements MediaPlayerC
         TextView title;
         TextView other;
         ImageView art;
-        //ImageView isplaying;
     }
 
 }

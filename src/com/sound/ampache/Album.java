@@ -2,8 +2,8 @@ package com.sound.ampache.objects;
 import java.util.ArrayList;
 
 public class Album extends ampacheObject {
-    public Album() {
-        type = "album";
+    public String getType() {
+	return "album";
     }
 
     public boolean hasChildren() {

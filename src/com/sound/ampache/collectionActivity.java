@@ -73,6 +73,8 @@ public final class collectionActivity extends ListActivity
 
         setListAdapter(new collectionAdapter(this, list));
 
+	getListView().setTextFilterEnabled(true);
+
         dismissDialog(0);
     }
     
@@ -89,13 +91,14 @@ public final class collectionActivity extends ListActivity
 	}
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
         Intent intent = new Intent().setClass(this, collectionActivity.class);
-        if (val.type.equals("artist")) {
+        if (val.getType().equals("artist")) {
             String[] dir = {"artist_albums", val.id};
             intent = intent.putExtra("directive", dir).putExtra("title", "Artist: " + val.toString());
-        } else if (val.type.equals("album")) {
+        } else if (val.getType().equals("album")) {
             String[] dir = {"album_songs", val.id};
             intent = intent.putExtra("directive", dir).putExtra("title", "Album: " + val.toString());
-        } else if (val.type.equals("song")) {
+        } else if (val.getType().equals("song")) {
+	    Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
             amdroid.playlistCurrent.add((Song) val);
             return;
         }
@@ -194,7 +197,7 @@ public final class collectionActivity extends ListActivity
 	
 	public void onClick(View v) {
 	    ampacheObject cur = (ampacheObject) list.get(pos);
-	    Toast.makeText(mCtx, "Enqueue " + cur.type + ": " + cur.toString(), Toast.LENGTH_LONG).show();
+	    Toast.makeText(mCtx, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_LONG).show();
 	    if (cur.hasChildren()) {
 		amdroid.playlistCurrent.addAll(cur.allChildren());
 	    } else {

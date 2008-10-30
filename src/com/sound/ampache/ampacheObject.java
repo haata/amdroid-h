@@ -5,7 +5,6 @@ import java.util.ArrayList;
 public abstract class ampacheObject implements Serializable {
     public String id = "";
     public String name = "";
-    static public String type = "";
     
     public String getId() {
         return id;
@@ -14,6 +13,8 @@ public abstract class ampacheObject implements Serializable {
     public String toString() {
         return name;
     }
+
+    abstract public String getType();
 
     abstract public ArrayList allChildren();
 

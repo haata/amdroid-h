@@ -63,7 +63,7 @@ public class ampacheCommunicator
         update = hand.update;
     }
 
-    public ArrayList fetch(String type, String filter) throws Exception{
+    public ArrayList<ampacheObject> fetch(String type, String filter) throws Exception{
         dataHandler hand;
         String append = "";
 
@@ -87,7 +87,7 @@ public class ampacheCommunicator
                 /* cache load failed for some reason 
             }
             */
-            append = "action=artists&auth=" + authToken + "&limit=100";
+            append = "action=artists&auth=" + authToken; // + "&limit=100";
             hand = new ampacheArtistParser();
         } else if (type.equals("artist_albums")) {
             append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
@@ -128,7 +128,7 @@ public class ampacheCommunicator
     }
 
     private class dataHandler extends DefaultHandler {
-        public ArrayList data = new ArrayList();
+        public ArrayList<ampacheObject> data = new ArrayList();
     }
     private class ampacheAuthParser extends DefaultHandler {
         public String token = "";
