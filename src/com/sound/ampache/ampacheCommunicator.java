@@ -38,13 +38,20 @@ public class ampacheCommunicator
     }
 
     public void perform_auth_request() throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
         /* Get the current time, and convert it to a string */
         String time = Long.toString((new Date()).getTime() / 1000);
         
         /* build our passphrase hash */
         md.reset();
-        String preHash = time + prefs.getString("server_password_preference", "");
+        
+        /* first hash the password */
+        String pwHash = prefs.getString("server_password_preference", "");
+        md.update(pwHash.getBytes(), 0, pwHash.length());
+        String preHash = time + asHex(md.digest());
+        
+        /* then hash the timestamp in */
+        md.reset();
         md.update(preHash.getBytes(), 0, preHash.length());
         String hash = asHex(md.digest());
         
@@ -52,11 +59,7 @@ public class ampacheCommunicator
         ampacheAuthParser hand = new ampacheAuthParser();
         reader.setContentHandler(hand);
         String user = prefs.getString("server_username_preference", "");
-        if (!user.equals("")) {
-            reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001"+"&user="+user)));
-        } else {
-            reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001")));
-        }
+        reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001&user="+user)));
 
         authToken = hand.token;
         artists = hand.artists;
