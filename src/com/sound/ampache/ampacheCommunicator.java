@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.content.SharedPreferences;
 import android.content.Context;
+import android.widget.Toast;
 import android.preference.PreferenceManager;
 import java.io.*;
 import java.net.*;
@@ -66,29 +67,29 @@ public class ampacheCommunicator
         update = hand.update;
     }
 
-    public ArrayList<ampacheObject> fetch(String type, String filter) throws Exception{
-        dataHandler hand;
+    public ArrayList fetch(String type, String filter) throws Exception{
         String append = "";
+        dataHandler hand;
 
         if (type.equals("artists")) {
             boolean goodcache = true;
-
+            
             /*
-            try {
-                FileInputStream din = mCtxt.openFileInput("date");
-                FileInputStream cin = mCtxt.openFileInput("cache");
-                ObjectInputStream doi = new ObjectInputStream(din);
-                String cDate = (String) doi.readObject();
-                doi.close();
-                if (cDate.equals(update)) {
-                    ObjectInputStream coi = new ObjectInputStream(cin);
-                    ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
-                    coi.close();
-                    return goods;
-                }
-            } catch (Exception poo) {
-                /* cache load failed for some reason 
-            }
+              try {
+              FileInputStream din = mCtxt.openFileInput("date");
+              FileInputStream cin = mCtxt.openFileInput("cache");
+              ObjectInputStream doi = new ObjectInputStream(din);
+              String cDate = (String) doi.readObject();
+              doi.close();
+              if (cDate.equals(update)) {
+              ObjectInputStream coi = new ObjectInputStream(cin);
+              ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
+              coi.close();
+              return goods;
+              }
+              } catch (Exception poo) {
+              /* cache load failed for some reason 
+              }
             */
             append = "action=artists&auth=" + authToken; // + "&limit=100";
             hand = new ampacheArtistParser();
@@ -104,35 +105,125 @@ public class ampacheCommunicator
         
         reader.setContentHandler(hand);
         reader.parse(new InputSource(fetchFromServer(append)));
-
+        
         /*
-        if (type.equals("artists")) {
-            try {
-                /* we just did a full fetch, write the cache! 
-                FileOutputStream dot = mCtxt.openFileOutput("date", 0);
-                FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
-                ObjectOutputStream dos = new ObjectOutputStream(dot);
-                dos.writeObject(update);
-                dos.close();
-                ObjectOutputStream cos = new ObjectOutputStream(cot);
-                cos.writeObject(hand.data);
-                cos.close();
-            } catch (Exception poo) {
-                /* so much for the cache 
-            }
-        } */
-
+          if (type.equals("artists")) {
+          try {
+          /* we just did a full fetch, write the cache! 
+          FileOutputStream dot = mCtxt.openFileOutput("date", 0);
+          FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
+          ObjectOutputStream dos = new ObjectOutputStream(dot);
+          dos.writeObject(update);
+          dos.close();
+          ObjectOutputStream cos = new ObjectOutputStream(cot);
+          cos.writeObject(hand.data);
+          cos.close();
+          } catch (Exception poo) {
+          /* so much for the cache 
+          }
+          } */
+        
         return hand.data;
     }
-    
+   
     public InputStream fetchFromServer(String append) throws Exception {
         URL fullUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
         return fullUrl.openStream();
     }
 
+    public ampacheRequest newRequest() {
+        return new ampacheRequest();
+    }
+
+    public interface ampacheDataReceiver
+    {
+        public void receiveObjects(ArrayList data);
+    }
+
+    public class ampacheRequest implements threadedFetcher.fetchReceiver
+    {
+        private ampacheDataReceiver recv = null;
+        private dataHandler hand;
+        private Context mCtx;
+
+        public void fetch(String type, String filter, ampacheDataReceiver inrecv, Context ctx) throws Exception{
+            mCtx = ctx;
+            Toast.makeText(mCtx, "comm: fetching " + type, Toast.LENGTH_LONG).show();
+            String append = "";
+            recv = inrecv;
+
+            if (type.equals("artists")) {
+                boolean goodcache = true;
+                
+                /*
+                  try {
+                  FileInputStream din = mCtxt.openFileInput("date");
+                  FileInputStream cin = mCtxt.openFileInput("cache");
+                  ObjectInputStream doi = new ObjectInputStream(din);
+                  String cDate = (String) doi.readObject();
+                  doi.close();
+                  if (cDate.equals(update)) {
+                  ObjectInputStream coi = new ObjectInputStream(cin);
+                  ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
+                  coi.close();
+                  return goods;
+                  }
+                  } catch (Exception poo) {
+                  /* cache load failed for some reason 
+                  }
+                */
+                append = "action=artists&auth=" + authToken; // + "&limit=100";
+                hand = new ampacheArtistParser();
+            } else if (type.equals("artist_albums")) {
+                append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
+                hand = new ampacheAlbumParser();
+            } else if (type.equals("album_songs")) {
+                append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
+                hand = new ampacheSongParser();
+            } else {
+                return; // new ArrayList();
+            }
+            
+            reader.setContentHandler(hand);
+            threadedFetcher fetcher = new threadedFetcher();
+            fetcher.setUrl(new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append));
+            fetcher.setDataListener(this);
+            fetcher.start();
+        }
+
+        public void receiveData(InputStream data) {
+            //Toast.makeText(mCtx, "comm: parsing objects", Toast.LENGTH_LONG).show();
+            try {
+                reader.parse(new InputSource(data));
+            } catch (Exception poo) {
+            }
+            
+            /*
+              if (type.equals("artists")) {
+              try {
+              /* we just did a full fetch, write the cache! 
+              FileOutputStream dot = mCtxt.openFileOutput("date", 0);
+              FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
+              ObjectOutputStream dos = new ObjectOutputStream(dot);
+              dos.writeObject(update);
+              dos.close();
+              ObjectOutputStream cos = new ObjectOutputStream(cot);
+              cos.writeObject(hand.data);
+              cos.close();
+              } catch (Exception poo) {
+              /* so much for the cache 
+              }
+              } */
+            
+            recv.receiveObjects(hand.data);
+        }
+        
+    }     
+
     private class dataHandler extends DefaultHandler {
         public ArrayList<ampacheObject> data = new ArrayList();
     }
+
     private class ampacheAuthParser extends DefaultHandler {
         public String token = "";
         public int artists= 0;

@@ -11,10 +11,10 @@ public class Album extends ampacheObject {
     }
 
     public ArrayList allChildren() {
-	try {
-	    return com.sound.ampache.amdroid.comm.fetch("album_songs", this.id);
-	} catch (Exception poo) {
-	    return new ArrayList();
-	}
+        try {
+            return com.sound.ampache.amdroid.comm.fetch("album_songs", this.id);
+        } catch (Exception poo) {
+            return new ArrayList();
+        }
     }
 }

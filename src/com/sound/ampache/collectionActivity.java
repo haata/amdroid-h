@@ -26,55 +26,62 @@ import java.util.List;
 import java.util.ArrayList;
 import java.io.*;
 import com.sound.ampache.ampacheCommunicator;
+import com.sound.ampache.ampacheCommunicator.ampacheRequest;
 import com.sound.ampache.objects.*;
 import java.lang.Integer;
 
-public final class collectionActivity extends ListActivity
+public final class collectionActivity extends ListActivity implements ampacheCommunicator.ampacheDataReceiver
 {
 
-    ArrayList<ampacheObject> list;
+    ArrayList<ampacheObject> list = new ArrayList();
     
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
+        
         //Debug.startMethodTracing();
         //Debug.enableEmulatorTraceOutput();
-
+        
         //Debug.waitForDebugger();
-
+        
         Intent intent = getIntent();
-
+        
         String[] directive;
         directive = intent.getStringArrayExtra("directive");
-
+        
         showDialog(0);
-
+        
         if (directive == null) {
             directive = new String[2];
             directive[0] = "artists";
             directive[1] =  "";
         }
-
-	list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
-	if (list == null) {
-	    try {
-		list = amdroid.comm.fetch(directive[0], directive[1]);
-	    } catch (Exception poo) {
-		Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
-		list = new ArrayList();
-	    }
-	}
+        
+        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
+        if (list == null) {
+            try {
+                ampacheRequest req = amdroid.comm.newRequest();
+                req.fetch(directive[0], directive[1], this, this);
+            } catch (Exception poo) {
+                Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
+                list = new ArrayList();
+            }
+        }
         /* set up our list adapter to handle the data */
         //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
-	//Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show();
-
-        setListAdapter(new collectionAdapter(this, list));
-
-	getListView().setTextFilterEnabled(true);
-
+        //Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show();
+        
+        //setListAdapter(new collectionAdapter(this, list));
+        
+        getListView().setTextFilterEnabled(true);
+        
+    }
+    
+    public void receiveObjects(ArrayList data) {
+        Toast.makeText(this, "Got some data!" , Toast.LENGTH_LONG).show();
+        list = data;
         dismissDialog(0);
     }
     
