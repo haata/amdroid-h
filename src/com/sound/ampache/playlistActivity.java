@@ -164,19 +164,23 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     private void turnOffPlayingView() {
-	View holder = lv.getChildAt(playingIndex);
-	if (holder != null) {
-	    ImageView img = (ImageView) holder.findViewById(R.id.art);
-	    img.setVisibility(View.INVISIBLE);
-	}
+        if (playingIndex >= lv.getFirstVisiblePosition() && playingIndex <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(playingIndex - lv.getFirstVisiblePosition());
+            if (holder != null) {
+                ImageView img = (ImageView) holder.findViewById(R.id.art);
+                img.setVisibility(View.INVISIBLE);
+            }
+        }
     }
 
     private void turnOnPlayingView() {
-	View holder = lv.getChildAt(playingIndex);
-	if (holder != null) {
-	    ImageView img = (ImageView) holder.findViewById(R.id.art);
-	    img.setVisibility(View.VISIBLE);
-	}
+        if (playingIndex >= lv.getFirstVisiblePosition() && playingIndex <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(playingIndex - lv.getFirstVisiblePosition());
+            if (holder != null) {
+                ImageView img = (ImageView) holder.findViewById(R.id.art);
+                img.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     public void onCompletion(MediaPlayer media) {
