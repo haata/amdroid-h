@@ -140,7 +140,7 @@ public class ampacheCommunicator
         public void receiveObjects(ArrayList data);
     }
 
-    public class ampacheRequest extends Thread
+    public class ampacheRequest implements Runnable
     {
         private ampacheDataReceiver recv = null;
         private dataHandler hand;

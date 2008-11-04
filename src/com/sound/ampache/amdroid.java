@@ -17,7 +17,7 @@ public final class amdroid extends Application {
     public static ArrayList<Song> playlistCurrent;
 
     public void onCreate() {
-        Debug.waitForDebugger();
+        //Debug.waitForDebugger();
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         try {
             comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this), this);
