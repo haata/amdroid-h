@@ -131,8 +131,8 @@ public class ampacheCommunicator
         return fullUrl.openStream();
     }
 
-    public ampacheRequest newRequest() {
-        return new ampacheRequest();
+    public ampacheRequest newRequest(String type, String filter, ampacheDataReceiver recv) {
+        return new ampacheRequest(type, filter, recv);
     }
 
     public interface ampacheDataReceiver
@@ -140,17 +140,24 @@ public class ampacheCommunicator
         public void receiveObjects(ArrayList data);
     }
 
-    public class ampacheRequest implements threadedFetcher.fetchReceiver
+    public class ampacheRequest extends Thread
     {
         private ampacheDataReceiver recv = null;
         private dataHandler hand;
         private Context mCtx;
 
-        public void fetch(String type, String filter, ampacheDataReceiver inrecv, Context ctx) throws Exception{
-            mCtx = ctx;
-            Toast.makeText(mCtx, "comm: fetching " + type, Toast.LENGTH_LONG).show();
+        private String type;
+        private String filter;
+        
+
+        public ampacheRequest(String type, String filter, ampacheDataReceiver recv) {
+            this.recv = recv;
+            this.type = type;
+            this.filter = filter;
+        }
+
+        public void run() {
             String append = "";
-            recv = inrecv;
 
             if (type.equals("artists")) {
                 boolean goodcache = true;
@@ -185,19 +192,11 @@ public class ampacheCommunicator
             }
             
             reader.setContentHandler(hand);
-            threadedFetcher fetcher = new threadedFetcher();
-            fetcher.setUrl(new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append));
-            fetcher.setDataListener(this);
-            fetcher.start();
-        }
-
-        public void receiveData(InputStream data) {
-            //Toast.makeText(mCtx, "comm: parsing objects", Toast.LENGTH_LONG).show();
             try {
-                reader.parse(new InputSource(data));
+                URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
+                reader.parse(new InputSource(theUrl.openStream()));
             } catch (Exception poo) {
             }
-            
             /*
               if (type.equals("artists")) {
               try {

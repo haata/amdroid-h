@@ -62,8 +62,8 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
         if (list == null) {
             try {
-                ampacheRequest req = amdroid.comm.newRequest();
-                req.fetch(directive[0], directive[1], this, this);
+                ampacheRequest req = amdroid.comm.newRequest(directive[0], directive[1], this);
+                req.start();
             } catch (Exception poo) {
                 Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
                 list = new ArrayList();
@@ -73,7 +73,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
         //Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show();
         
-        //setListAdapter(new collectionAdapter(this, list));
+        setListAdapter(new collectionAdapter(this, list));
         
         getListView().setTextFilterEnabled(true);
         
