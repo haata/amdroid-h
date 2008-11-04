@@ -9,6 +9,9 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Debug;
+import android.os.Handler;
+import android.os.Message;
+import android.os.Messenger;
 import android.preference.PreferenceManager;
 import android.widget.ListView;
 import android.widget.BaseAdapter;
@@ -25,80 +28,89 @@ import android.view.MenuItem;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.*;
-import com.sound.ampache.ampacheCommunicator;
-import com.sound.ampache.ampacheCommunicator.ampacheRequest;
 import com.sound.ampache.objects.*;
 import java.lang.Integer;
 
 public final class collectionActivity extends ListActivity implements ampacheCommunicator.ampacheDataReceiver
 {
 
-    ArrayList<ampacheObject> list = new ArrayList();
-    
+    private ArrayList<ampacheObject> list = new ArrayList();
+    public Handler dataReadyHandler;
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
+        //debugging crap
         //Debug.startMethodTracing();
         //Debug.enableEmulatorTraceOutput();
-        
         //Debug.waitForDebugger();
-        
+
+        showDialog(0);
+
         Intent intent = getIntent();
-        
+
         String[] directive;
         directive = intent.getStringArrayExtra("directive");
-        
-        showDialog(0);
-        
+
         if (directive == null) {
             directive = new String[2];
             directive[0] = "artists";
-            directive[1] =  "";
+            directive[1] = "";
         }
-        
-        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
-        if (list == null) {
-            try {
-                //ampacheRequest req = amdroid.comm.newRequest(directive[0], directive[1], this);
-		ampacheRequest req = amdroid.comm.new ampacheRequest(directive[0], directive[1], this);
-                getListView().post(req);
-            } catch (Exception poo) {
-                Toast.makeText(this, poo.toString(), Toast.LENGTH_LONG).show();
-                list = new ArrayList();
+
+        // and be prepared to handle the response
+        dataReadyHandler = new Handler() {
+            public void handleMessage(Message msg) {
+                dismissDialog(0);
+                //list = (ArrayList) msg.obj;
+                setListAdapter(new collectionAdapter(collectionActivity.this, (ArrayList) msg.obj));
             }
+        };
+        
+        // Are we being 're-created' ?
+        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
+        // If not, queue up a data fetch
+        if (list == null) {
+            //ampacheRequest req = amdroid.comm.new ampacheRequest(directive[0], directive[1], this);
+            Message requestMsg = new Message();
+            
+            //tell it what to do
+            requestMsg.obj = directive;
+            
+            //tell it how to handle the stuff
+            requestMsg.replyTo = new Messenger (this.dataReadyHandler);
+            amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+            //req.start();
         }
-        /* set up our list adapter to handle the data */
-        //setListAdapter(new ArrayAdapter<ampacheObject> (this, android.R.layout.simple_list_item_1, myList));
-        //Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show();
-        
-        //setListAdapter(new collectionAdapter(this, list));
-        
+
         getListView().setTextFilterEnabled(true);
-        
+
     }
     
+    //The fetch thread calls this function.
     public void receiveObjects(ArrayList data) {
-        //Toast.makeText(this, "Got some data!" , Toast.LENGTH_LONG).show();
         list = data;
         dismissDialog(0);
-	setListAdapter(new collectionAdapter(this, list));
+        //Notify the original thread that data is ready
+        Message msg = new Message();
+        msg.what = 0x1337;
+        this.dataReadyHandler.sendMessage(msg);
     }
-    
+
     protected void onSaveInstanceState(Bundle bundle) {
-	super.onSaveInstanceState(bundle);
-	//Toast.makeText(this, "Saving instance..", Toast.LENGTH_SHORT).show();
+        super.onSaveInstanceState(bundle);
+        //Toast.makeText(this, "Saving instance..", Toast.LENGTH_SHORT).show();
         bundle.putSerializable("list", list);
     }
 
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
-	if (l.getItemAtPosition(position) == null) {
-	    return;
-	}
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
+        if (val == null)
+            return;
         Intent intent = new Intent().setClass(this, collectionActivity.class);
         if (val.getType().equals("artist")) {
             String[] dir = {"artist_albums", val.id};
@@ -107,7 +119,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             String[] dir = {"album_songs", val.id};
             intent = intent.putExtra("directive", dir).putExtra("title", "Album: " + val.toString());
         } else if (val.getType().equals("song")) {
-	    Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
             amdroid.playlistCurrent.add((Song) val);
             return;
         }
@@ -150,36 +162,36 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         private LayoutInflater mInflater;
 
         private ArrayList myList;
-        
-	private Context mCtx;
+
+        private Context mCtx;
 
         public collectionAdapter(Context context, ArrayList list) {
             mInflater = LayoutInflater.from(context);
             myList = list;
-	    mCtx = context;
+            mCtx = context;
         }
-        
+
         public int getCount() {
             return myList.size();
         }
-        
+
         public Object getItem(int position) {
             return myList.get(position);
         }
-        
+
         public long getItemId(int position) {
             return position;
         }
-        
+
         public View getView(int position, View convertView, ViewGroup parent) {
             bI holder;
             ampacheObject cur = (ampacheObject) myList.get(position);
-            
+
             /* we don't reuse */
             if (convertView == null) {
                 convertView = mInflater.inflate(R.layout.browsable_item, null);
                 holder = new bI();
-                
+
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.add = (ImageView) convertView.findViewById(R.id.add);
 
@@ -187,32 +199,33 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             } else {
                 holder = (bI) convertView.getTag();
             }
-            
+
             holder.title.setText(cur.toString());
-	    holder.add.setOnClickListener( new enqueueListener(mCtx, position));
+            holder.add.setOnClickListener( new enqueueListener(mCtx, position, cur));
             return convertView;
         }
     }
-    
+
     private class enqueueListener implements View.OnClickListener
     {
-	int pos;
-	Context mCtx;
-	
-	public enqueueListener(Context context, int position) {
-	    mCtx = context;
-	    pos = position;
-	}
-	
-	public void onClick(View v) {
-	    ampacheObject cur = (ampacheObject) list.get(pos);
-	    Toast.makeText(mCtx, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_LONG).show();
-	    if (cur.hasChildren()) {
-		amdroid.playlistCurrent.addAll(cur.allChildren());
-	    } else {
-		amdroid.playlistCurrent.add((Song) cur);
-	    }
-	}
+        int pos;
+        Context mCtx;
+        ampacheObject cur;
+
+        public enqueueListener(Context context, int position, ampacheObject cur) {
+            mCtx = context;
+            pos = position;
+            this.cur = cur;
+        }
+
+        public void onClick(View v) {
+            Toast.makeText(mCtx, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_SHORT).show();
+            if (cur.hasChildren()) {
+                amdroid.playlistCurrent.addAll(cur.allChildren());
+            } else {
+                amdroid.playlistCurrent.add((Song) cur);
+            }
+        }
     }
 
     static class bI {

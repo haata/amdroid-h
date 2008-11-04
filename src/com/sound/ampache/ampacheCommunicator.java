@@ -10,6 +10,9 @@ import android.content.SharedPreferences;
 import android.content.Context;
 import android.widget.Toast;
 import android.preference.PreferenceManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import java.io.*;
 import java.net.*;
 import java.math.BigInteger;
@@ -131,16 +134,12 @@ public class ampacheCommunicator
         return fullUrl.openStream();
     }
 
-    public ampacheRequest newRequest(String type, String filter, ampacheDataReceiver recv) {
-        return new ampacheRequest(type, filter, recv);
-    }
-
     public interface ampacheDataReceiver
     {
         public void receiveObjects(ArrayList data);
     }
 
-    public class ampacheRequest implements Runnable
+    public class ampacheRequestHandler extends Thread
     {
         private ampacheDataReceiver recv = null;
         private dataHandler hand;
@@ -149,76 +148,83 @@ public class ampacheCommunicator
         private String type;
         private String filter;
         
-
-        public ampacheRequest(String type, String filter, ampacheDataReceiver recv) {
-            this.recv = recv;
-            this.type = type;
-            this.filter = filter;
-        }
-
-        public void run() {
-            String append = "";
-
-            if (type.equals("artists")) {
-                boolean goodcache = true;
-                
-                /*
-                  try {
-                  FileInputStream din = mCtxt.openFileInput("date");
-                  FileInputStream cin = mCtxt.openFileInput("cache");
-                  ObjectInputStream doi = new ObjectInputStream(din);
-                  String cDate = (String) doi.readObject();
-                  doi.close();
-                  if (cDate.equals(update)) {
-                  ObjectInputStream coi = new ObjectInputStream(cin);
-                  ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
-                  coi.close();
-                  return goods;
-                  }
-                  } catch (Exception poo) {
-                  /* cache load failed for some reason 
-                  }
-                */
-                append = "action=artists&auth=" + authToken; // + "&limit=100";
-                hand = new ampacheArtistParser();
-            } else if (type.equals("artist_albums")) {
-                append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
-                hand = new ampacheAlbumParser();
-            } else if (type.equals("album_songs")) {
-                append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
-                hand = new ampacheSongParser();
-            } else {
-                return; // new ArrayList();
-            }
-            
-            reader.setContentHandler(hand);
-            try {
-                URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
-                reader.parse(new InputSource(theUrl.openStream()));
-            } catch (Exception poo) {
-            }
-            /*
-              if (type.equals("artists")) {
-              try {
-              /* we just did a full fetch, write the cache! 
-              FileOutputStream dot = mCtxt.openFileOutput("date", 0);
-              FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
-              ObjectOutputStream dos = new ObjectOutputStream(dot);
-              dos.writeObject(update);
-              dos.close();
-              ObjectOutputStream cos = new ObjectOutputStream(cot);
-              cos.writeObject(hand.data);
-              cos.close();
-              } catch (Exception poo) {
-              /* so much for the cache 
-              }
-              } */
-            
-            recv.receiveObjects(hand.data);
-        }
+        public Handler incomingRequestHandler;
         
-    }     
+        public void run() {
+            Looper.prepare();
+            
+            incomingRequestHandler = new Handler() {
+                    public void handleMessage(Message msg) {
+                        String[] directive = (String[]) msg.obj;
+                        String append = "";
 
+                        if (directive[0].equals("artists")) {
+                            boolean goodcache = true;
+                            
+                            /*
+                              try {
+                              FileInputStream din = mCtxt.openFileInput("date");
+                              FileInputStream cin = mCtxt.openFileInput("cache");
+                              ObjectInputStream doi = new ObjectInputStream(din);
+                              String cDate = (String) doi.readObject();
+                              doi.close();
+                              if (cDate.equals(update)) {
+                              ObjectInputStream coi = new ObjectInputStream(cin);
+                              ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
+                              coi.close();
+                              return goods;
+                              }
+                              } catch (Exception poo) {
+                              /* cache load failed for some reason 
+                              }
+                            */
+                            append = "action=artists&auth=" + authToken; // + "&limit=100";
+                            hand = new ampacheArtistParser();
+                        } else if (directive[0].equals("artist_albums")) {
+                            append = "action=artist_albums&filter=" + directive[1] + "&auth=" + authToken;
+                            hand = new ampacheAlbumParser();
+                        } else if (directive[0].equals("album_songs")) {
+                            append = "action=album_songs&filter=" + directive[1] + "&auth=" + authToken;
+                            hand = new ampacheSongParser();
+                        } else {
+                            return; // new ArrayList();
+                        }
+                        
+                        reader.setContentHandler(hand);
+                        try {
+                            URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
+                            reader.parse(new InputSource(theUrl.openStream()));
+                        } catch (Exception poo) {
+                        }
+                        /*
+                          if (type.equals("artists")) {
+                          try {
+                          /* we just did a full fetch, write the cache! 
+                          FileOutputStream dot = mCtxt.openFileOutput("date", 0);
+                          FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
+                          ObjectOutputStream dos = new ObjectOutputStream(dot);
+                          dos.writeObject(update);
+                          dos.close();
+                          ObjectOutputStream cos = new ObjectOutputStream(cot);
+                          cos.writeObject(hand.data);
+                          cos.close();
+                          } catch (Exception poo) {
+                          /* so much for the cache 
+                          }
+                          } */
+                        
+                        Message reply = new Message();
+                        reply.obj = hand.data;
+                        try {
+                            msg.replyTo.send(reply);
+                        } catch (Exception poo) {
+                        }
+                    }
+                };
+            Looper.loop();
+        }
+    }     
+    
     private class dataHandler extends DefaultHandler {
         public ArrayList<ampacheObject> data = new ArrayList();
     }
