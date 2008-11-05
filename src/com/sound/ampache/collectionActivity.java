@@ -36,7 +36,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
 
     private ArrayList<ampacheObject> list = new ArrayList();
     public Handler dataReadyHandler;
-    private String test;
+    private String title;
 
     /** Called when the activity is first created. */
     @Override
@@ -49,8 +49,6 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         //Debug.enableEmulatorTraceOutput();
         //Debug.waitForDebugger();
 
-        test = amdroid.comm.authToken;
-
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
             Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
             startActivity(prefsIntent);
@@ -61,19 +59,23 @@ public final class collectionActivity extends ListActivity implements ampacheCom
 
         String[] directive;
         directive = intent.getStringArrayExtra("directive");
+        title = intent.getStringExtra("title");
 
         if (directive == null) {
             directive = new String[2];
             directive[0] = "artists";
             directive[1] = "";
+            title = "Artists";
         }
+
+        setTitle(title);
 
         // and be prepared to handle the response
         dataReadyHandler = new Handler() {
             public void handleMessage(Message msg) {
                 dismissDialog(0);
                 //list = (ArrayList) msg.obj;
-                setListAdapter(new collectionAdapter(collectionActivity.this, (ArrayList) msg.obj));
+                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, (ArrayList) msg.obj));
             }
         };
         
@@ -96,10 +98,10 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             //req.start();
         } else {
             dismissDialog(0);
-            setListAdapter(new collectionAdapter(this, list));
+            setListAdapter(new collectionAdapter(this, R.layout.browsable_item,list));
         }
 
-        //getListView().setTextFilterEnabled(true);
+        getListView().setTextFilterEnabled(true);
 
     }
     
@@ -158,7 +160,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
     @Override
     protected Dialog onCreateDialog(int id) {
         ProgressDialog dialog = new ProgressDialog(this);
-        dialog.setMessage("Loading...");
+        dialog.setMessage("Fetching " + title +"...");
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
         return dialog;
@@ -170,20 +172,22 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         return true;
     }
 
-    private class collectionAdapter extends BaseAdapter
+    private class collectionAdapter extends ArrayAdapter
     {
+        
+        private Context mCtx;
+        private int resid;
         private LayoutInflater mInflater;
 
-        private ArrayList myList;
-
-        private Context mCtx;
-
-        public collectionAdapter(Context context, ArrayList list) {
-            mInflater = LayoutInflater.from(context);
-            myList = list;
+        
+        public collectionAdapter(Context context, int resid, ArrayList list) {
+            super(context, resid, list);
+            this.resid = resid;
             mCtx = context;
+            mInflater = LayoutInflater.from(context);
         }
 
+        /*
         public int getCount() {
             return myList.size();
         }
@@ -195,14 +199,15 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         public long getItemId(int position) {
             return position;
         }
+        */
 
         public View getView(int position, View convertView, ViewGroup parent) {
             bI holder;
-            ampacheObject cur = (ampacheObject) myList.get(position);
+            ampacheObject cur = (ampacheObject) getItem(position);
 
             /* we don't reuse */
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.browsable_item, null);
+                convertView = mInflater.inflate(resid, null);
                 holder = new bI();
 
                 holder.title = (TextView) convertView.findViewById(R.id.title);
@@ -240,7 +245,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             }
         }
     }
-
+    
     static class bI {
         TextView title;
         ImageView add;

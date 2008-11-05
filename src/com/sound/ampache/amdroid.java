@@ -19,13 +19,18 @@ public final class amdroid extends Application {
     public static SharedPreferences prefs;
     public static ArrayList<Song> playlistCurrent;
     public static MediaPlayer mp;
-
+    public static int playingIndex;
+    public static int bufferPC;
+    public static Boolean playing;
 
     public void onCreate() {
         //Debug.waitForDebugger();
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         mp = new MediaPlayer();
+
+        playingIndex = 0;
+        bufferPC = 0;
 
         try {
             comm = new ampacheCommunicator(prefs, this);

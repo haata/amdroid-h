@@ -31,38 +31,35 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 {
     private MediaController mc;
     private ListView lv;
-    
-    private int playingIndex;
-    private int bufferPC;
-    private Boolean playing;
+
     private playlistAdapter pla;
 
-    public void onCreate(Bundle savedInstanceState) 
+    public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.playlist);
-        
+
         amdroid.mp.setOnBufferingUpdateListener(this);
         amdroid.mp.setOnCompletionListener(this);
         TextView menuText = (TextView) findViewById(R.id.menutext);
         mc = new MediaController(this, false);
-        
+
         menuText.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-		    mc.show();
-		}});
+                    mc.show();
+                }});
 
-	amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-        public void onPrepared(MediaPlayer mp) {
-		    amdroid.mp.start();
-		    mc.show();
-		}});
+        amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                public void onPrepared(MediaPlayer mp) {
+                    amdroid.mp.start();
+                    mc.show();
+                }});
 
-	lv = (ListView) findViewById(R.id.list);
-	lv.setOnItemClickListener(this);
+        lv = (ListView) findViewById(R.id.list);
+        lv.setOnItemClickListener(this);
 
-	mc.setAnchorView(menuText);
+        mc.setAnchorView(menuText);
         mc.setEnabled(true);
         mc.setPrevNextListeners(new nextList(), new prevList());
 
@@ -74,6 +71,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     }
 
+
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.playlist_menu, menu);
@@ -84,8 +82,8 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     private class prevList implements OnClickListener
     {
         public void onClick(View v) {
-	    turnOffPlayingView();
-            playingIndex--;
+            turnOffPlayingView();
+            amdroid.playingIndex--;
             play();
         }
     }
@@ -93,32 +91,32 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     private class nextList implements OnClickListener
     {
         public void onClick(View v) {
-	    turnOffPlayingView();
-            playingIndex++;
+            turnOffPlayingView();
+            amdroid.playingIndex++;
             play();
         }
     }
-    
+
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        bufferPC = percent;
+        amdroid.bufferPC = percent;
     }
 
     public int getBufferPercentage() {
-        return bufferPC;
+        return amdroid.bufferPC;
     }
 
     public int getCurrentPosition() {
-	if (amdroid.mp.isPlaying()) {
-	    return amdroid.mp.getCurrentPosition();
-	}
-	return 0;
+        if (amdroid.mp.isPlaying()) {
+            return amdroid.mp.getCurrentPosition();
+        }
+        return 0;
     }
 
     public int getDuration() {
-	if (amdroid.mp.isPlaying()) {
-	    return amdroid.mp.getDuration();
-	}
-	return 0;
+        if (amdroid.mp.isPlaying()) {
+            return amdroid.mp.getDuration();
+        }
+        return 0;
     }
 
     public boolean isPlaying() {
@@ -126,15 +124,15 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     public void pause() {
-	if (amdroid.mp.isPlaying()) {
-	    amdroid.mp.pause();
-	}
+        if (amdroid.mp.isPlaying()) {
+            amdroid.mp.pause();
+        }
     }
 
     public void seekTo(int pos) {
-	if (amdroid.mp.isPlaying()) {
-	    amdroid.mp.seekTo(pos);
-	}
+        if (amdroid.mp.isPlaying()) {
+            amdroid.mp.seekTo(pos);
+        }
     }
 
     public void start() {
@@ -142,18 +140,18 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     public void play() {
-        if (playingIndex >= amdroid.playlistCurrent.size()) {
-            playingIndex = amdroid.playlistCurrent.size();
+        if (amdroid.playingIndex >= amdroid.playlistCurrent.size()) {
+            amdroid.playingIndex = amdroid.playlistCurrent.size();
             mc.setEnabled(false);;
             return;
         }
-        
-        if (playingIndex < 0) {
-            playingIndex = 0;
+
+        if (amdroid.playingIndex < 0) {
+            amdroid.playingIndex = 0;
             return;
         }
 
-        Song chosen = (Song) amdroid.playlistCurrent.get(playingIndex);
+        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.playingIndex);
 
         if (amdroid.mp.isPlaying()) {
             amdroid.mp.stop();
@@ -166,12 +164,12 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         } catch (java.io.IOException blah) {
             return;
         }
-	turnOnPlayingView();
+        turnOnPlayingView();
     }
 
     private void turnOffPlayingView() {
-        if (playingIndex >= lv.getFirstVisiblePosition() && playingIndex <= lv.getLastVisiblePosition()) {
-            View holder = lv.getChildAt(playingIndex - lv.getFirstVisiblePosition());
+        if (amdroid.playingIndex >= lv.getFirstVisiblePosition() && amdroid.playingIndex <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(amdroid.playingIndex - lv.getFirstVisiblePosition());
             if (holder != null) {
                 ImageView img = (ImageView) holder.findViewById(R.id.art);
                 img.setVisibility(View.INVISIBLE);
@@ -180,8 +178,8 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     private void turnOnPlayingView() {
-        if (playingIndex >= lv.getFirstVisiblePosition() && playingIndex <= lv.getLastVisiblePosition()) {
-            View holder = lv.getChildAt(playingIndex - lv.getFirstVisiblePosition());
+        if (amdroid.playingIndex >= lv.getFirstVisiblePosition() && amdroid.playingIndex <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(amdroid.playingIndex - lv.getFirstVisiblePosition());
             if (holder != null) {
                 ImageView img = (ImageView) holder.findViewById(R.id.art);
                 img.setVisibility(View.VISIBLE);
@@ -190,14 +188,14 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     public void onCompletion(MediaPlayer media) {
-	turnOffPlayingView();
-        playingIndex++;
+        turnOffPlayingView();
+        amdroid.playingIndex++;
         play();
     }
 
     public void onItemClick(AdapterView l, View v, int position, long id) {
-	turnOffPlayingView();
-        playingIndex = position;
+        turnOffPlayingView();
+        amdroid.playingIndex = position;
         play();
     }
 
@@ -224,7 +222,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         public View getView(int position, View convertView, ViewGroup parent) {
             plI holder;
             Song cur = amdroid.playlistCurrent.get(position);
-            
+
             /* we don't reuse */
             if (convertView == null) {
                 convertView = mInflater.inflate(R.layout.playlist_item, null);
@@ -234,20 +232,20 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
                 holder.other = (TextView) convertView.findViewById(R.id.other);
                 holder.art = (ImageView) convertView.findViewById(R.id.art);
                 //holder.isplaying = (ImageView) convertView.findViewById(R.id.isplaying);
-                
+
                 convertView.setTag(holder);
             } else {
                 holder = (plI) convertView.getTag();
             }
-            
+
             holder.title.setText(cur.name);
             holder.other.setText(cur.artist + " - " + cur.album);
             //holder.art.setImageURI(Uri.parse(cur.art));
-            if (amdroid.mp.isPlaying() && playingIndex == position) {
+            if (amdroid.mp.isPlaying() && amdroid.playingIndex == position) {
                 holder.art.setVisibility(View.VISIBLE);
-	    } else {
-		holder.art.setVisibility(View.INVISIBLE);
-	    }
+            } else {
+                holder.art.setVisibility(View.INVISIBLE);
+            }
 
             return convertView;
         }
