@@ -36,6 +36,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
 
     private ArrayList<ampacheObject> list = new ArrayList();
     public Handler dataReadyHandler;
+    private String test;
 
     /** Called when the activity is first created. */
     @Override
@@ -48,7 +49,13 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         //Debug.enableEmulatorTraceOutput();
         //Debug.waitForDebugger();
 
-        showDialog(0);
+        test = amdroid.comm.authToken;
+
+        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
+            Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
+            startActivity(prefsIntent);
+            return;
+        }
 
         Intent intent = getIntent();
 
@@ -74,6 +81,9 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
         // If not, queue up a data fetch
         if (list == null) {
+            //Tell them we're loading
+            showDialog(0);
+
             //ampacheRequest req = amdroid.comm.new ampacheRequest(directive[0], directive[1], this);
             Message requestMsg = new Message();
             
@@ -84,9 +94,12 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
             //req.start();
+        } else {
+            dismissDialog(0);
+            setListAdapter(new collectionAdapter(this, list));
         }
 
-        getListView().setTextFilterEnabled(true);
+        //getListView().setTextFilterEnabled(true);
 
     }
     
@@ -153,7 +166,7 @@ public final class collectionActivity extends ListActivity implements ampacheCom
 
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+        inflater.inflate(R.menu.collection_menu, menu);
         return true;
     }
 

@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.TableLayout;
@@ -27,8 +29,6 @@ import android.net.Uri;
 
 public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
 {
-
-    private MediaPlayer mp;
     private MediaController mc;
     private ListView lv;
     
@@ -41,22 +41,21 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     {
         super.onCreate(savedInstanceState);
 
-	setContentView(R.layout.playlist);
-
-        mp = new MediaPlayer();
-        mp.setOnBufferingUpdateListener(this);
-	mp.setOnCompletionListener(this);
-	TextView menuText = (TextView) findViewById(R.id.menutext);
-	mc = new MediaController(this, false);
-
-	menuText.setOnClickListener(new OnClickListener() {
-		public void onClick(View v) {
+        setContentView(R.layout.playlist);
+        
+        amdroid.mp.setOnBufferingUpdateListener(this);
+        amdroid.mp.setOnCompletionListener(this);
+        TextView menuText = (TextView) findViewById(R.id.menutext);
+        mc = new MediaController(this, false);
+        
+        menuText.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
 		    mc.show();
 		}});
 
-	mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-		public void onPrepared(MediaPlayer mp) {
-		    mp.start();
+	amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        public void onPrepared(MediaPlayer mp) {
+		    amdroid.mp.start();
 		    mc.show();
 		}});
 
@@ -74,6 +73,13 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         lv.setAdapter(pla);
 
     }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.playlist_menu, menu);
+        return true;
+    }
+
 
     private class prevList implements OnClickListener
     {
@@ -102,37 +108,37 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     public int getCurrentPosition() {
-	if (mp.isPlaying()) {
-	    return mp.getCurrentPosition();
+	if (amdroid.mp.isPlaying()) {
+	    return amdroid.mp.getCurrentPosition();
 	}
 	return 0;
     }
 
     public int getDuration() {
-	if (mp.isPlaying()) {
-	    return mp.getDuration();
+	if (amdroid.mp.isPlaying()) {
+	    return amdroid.mp.getDuration();
 	}
 	return 0;
     }
 
     public boolean isPlaying() {
-        return mp.isPlaying();
+        return amdroid.mp.isPlaying();
     }
 
     public void pause() {
-	if (mp.isPlaying()) {
-	    mp.pause();
+	if (amdroid.mp.isPlaying()) {
+	    amdroid.mp.pause();
 	}
     }
 
     public void seekTo(int pos) {
-	if (mp.isPlaying()) {
-	    mp.seekTo(pos);
+	if (amdroid.mp.isPlaying()) {
+	    amdroid.mp.seekTo(pos);
 	}
     }
 
     public void start() {
-        mp.start();
+        amdroid.mp.start();
     }
 
     public void play() {
@@ -149,14 +155,14 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
         Song chosen = (Song) amdroid.playlistCurrent.get(playingIndex);
 
-        if (mp.isPlaying()) {
-            mp.stop();
+        if (amdroid.mp.isPlaying()) {
+            amdroid.mp.stop();
         }
 
-        mp.reset();
+        amdroid.mp.reset();
         try {
-            mp.setDataSource(chosen.url);
-            mp.prepareAsync();
+            amdroid.mp.setDataSource(chosen.url);
+            amdroid.mp.prepareAsync();
         } catch (java.io.IOException blah) {
             return;
         }
@@ -237,7 +243,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             holder.title.setText(cur.name);
             holder.other.setText(cur.artist + " - " + cur.album);
             //holder.art.setImageURI(Uri.parse(cur.art));
-            if (mp.isPlaying() && playingIndex == position) {
+            if (amdroid.mp.isPlaying() && playingIndex == position) {
                 holder.art.setVisibility(View.VISIBLE);
 	    } else {
 		holder.art.setVisibility(View.INVISIBLE);

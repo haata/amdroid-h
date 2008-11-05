@@ -10,19 +10,25 @@ import android.content.SharedPreferences;
 import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.os.Debug;
+import android.media.MediaPlayer;
 
 public final class amdroid extends Application {
 
     public static ampacheCommunicator comm;
     public static ampacheRequestHandler requestHandler;
-
+    public static SharedPreferences prefs;
     public static ArrayList<Song> playlistCurrent;
+    public static MediaPlayer mp;
+
 
     public void onCreate() {
         //Debug.waitForDebugger();
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mp = new MediaPlayer();
+
         try {
-            comm = new ampacheCommunicator(PreferenceManager.getDefaultSharedPreferences(this), this);
+            comm = new ampacheCommunicator(prefs, this);
             comm.perform_auth_request();
             requestHandler = comm.new ampacheRequestHandler();
             requestHandler.start();

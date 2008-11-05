@@ -1,0 +1,4 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/playing" android:title="Now Playing" android:icon="@android:drawable/ic_media_play" />
+  <item android:id="@+id/prefs" android:title="Preferences" android:icon="@android:drawable/ic_menu_preferences" />
+</menu>

@@ -13,12 +13,14 @@ public final class R {
     public static final class id {
         public static final int add=0x7f060000;
         public static final int art=0x7f060004;
-        public static final int collection=0x7f060006;
         public static final int list=0x7f060003;
         public static final int menutext=0x7f060002;
         public static final int other=0x7f060005;
-        public static final int playing=0x7f060007;
-        public static final int prefs=0x7f060008;
+        public static final int pl_clear=0x7f060008;
+        public static final int pl_load=0x7f06000a;
+        public static final int pl_save=0x7f060009;
+        public static final int playing=0x7f060006;
+        public static final int prefs=0x7f060007;
         public static final int title=0x7f060001;
     }
     public static final class layout {
@@ -28,7 +30,8 @@ public final class R {
         public static final int playlist_item=0x7f020003;
     }
     public static final class menu {
-        public static final int menu=0x7f050000;
+        public static final int collection_menu=0x7f050000;
+        public static final int playlist_menu=0x7f050001;
     }
     public static final class string {
         public static final int app_name=0x7f040000;
