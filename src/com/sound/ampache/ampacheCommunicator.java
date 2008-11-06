@@ -29,6 +29,7 @@ public class ampacheCommunicator
     private int artists;
     private String update;
     private Context mCtxt;
+    public String lastErr;
 
     private XMLReader reader;
 
@@ -39,6 +40,18 @@ public class ampacheCommunicator
         mCtxt = context;
         System.setProperty("org.xml.sax.driver","org.xmlpull.v1.sax2.Driver");
         reader = XMLReaderFactory.createXMLReader();
+    }
+
+    public void ping() {
+        dataHandler hand = new dataHandler();
+        reader.setContentHandler(hand);
+        try {
+            reader.parse(new InputSource(fetchFromServer("auth=" + this.authToken)));
+            if (hand.errorCode == 401) {
+                this.perform_auth_request();
+            }
+        } catch (Exception poo) {
+        }
     }
 
     public void perform_auth_request() throws Exception {
@@ -65,6 +78,10 @@ public class ampacheCommunicator
         String user = prefs.getString("server_username_preference", "");
         reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001&user="+user)));
 
+        if (hand.errorCode != 0) {
+            lastErr = hand.error;
+        }
+
         authToken = hand.token;
         artists = hand.artists;
         update = hand.update;
@@ -76,24 +93,6 @@ public class ampacheCommunicator
 
         if (type.equals("artists")) {
             boolean goodcache = true;
-            
-            /*
-              try {
-              FileInputStream din = mCtxt.openFileInput("date");
-              FileInputStream cin = mCtxt.openFileInput("cache");
-              ObjectInputStream doi = new ObjectInputStream(din);
-              String cDate = (String) doi.readObject();
-              doi.close();
-              if (cDate.equals(update)) {
-              ObjectInputStream coi = new ObjectInputStream(cin);
-              ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
-              coi.close();
-              return goods;
-              }
-              } catch (Exception poo) {
-              /* cache load failed for some reason 
-              }
-            */
             append = "action=artists&auth=" + authToken; // + "&limit=100";
             hand = new ampacheArtistParser();
         } else if (type.equals("artist_albums")) {
@@ -102,6 +101,9 @@ public class ampacheCommunicator
         } else if (type.equals("album_songs")) {
             append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheSongParser();
+        } else if (type.equals("song")) {
+            append = "action=song&filter=" + filter + "&auth=" + authToken;
+            hand = new ampacheSongParser();
         } else {
             return new ArrayList();
         }
@@ -109,23 +111,13 @@ public class ampacheCommunicator
         reader.setContentHandler(hand);
         reader.parse(new InputSource(fetchFromServer(append)));
         
-        /*
-          if (type.equals("artists")) {
-          try {
-          /* we just did a full fetch, write the cache! 
-          FileOutputStream dot = mCtxt.openFileOutput("date", 0);
-          FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
-          ObjectOutputStream dos = new ObjectOutputStream(dot);
-          dos.writeObject(update);
-          dos.close();
-          ObjectOutputStream cos = new ObjectOutputStream(cot);
-          cos.writeObject(hand.data);
-          cos.close();
-          } catch (Exception poo) {
-          /* so much for the cache 
-          }
-          } */
-        
+        /* handle expired sessions */
+        if (hand.error != null) {
+            if (hand.errorCode == 401) {
+                this.perform_auth_request();
+                return this.fetch(type, filter);
+            }
+        }
         return hand.data;
     }
    
@@ -138,13 +130,13 @@ public class ampacheCommunicator
     {
         public void receiveObjects(ArrayList data);
     }
-
+    
     public class ampacheRequestHandler extends Thread
     {
         private ampacheDataReceiver recv = null;
         private dataHandler hand;
         private Context mCtx;
-
+        
         private String type;
         private String filter;
         
@@ -157,27 +149,28 @@ public class ampacheCommunicator
                     public void handleMessage(Message msg) {
                         String[] directive = (String[]) msg.obj;
                         String append = "";
-
+                        boolean goodcache = false;
+                        String error = null;
+                        Message reply = new Message();
+                        ArrayList<ampacheObject> goods = null;
+                        InputSource dataIn = null;
+                        
                         if (directive[0].equals("artists")) {
-                            boolean goodcache = true;
+                            try {
+                                /* try our cache */
+                                FileInputStream din = mCtxt.openFileInput("date");
+                                FileInputStream cin = mCtxt.openFileInput("cache");
+                                ObjectInputStream doi = new ObjectInputStream(din);
+                                String cDate = (String) doi.readObject();
+                                doi.close();
+                                if (cDate.equals(update)) {
+                                    goodcache = true;
+                                    dataIn = new InputSource(cin);
+                                }
+                            } catch (Exception poo) {
+                                goodcache = false;  // cache failed, probably the files don't exist
+                            }
                             
-                            /*
-                              try {
-                              FileInputStream din = mCtxt.openFileInput("date");
-                              FileInputStream cin = mCtxt.openFileInput("cache");
-                              ObjectInputStream doi = new ObjectInputStream(din);
-                              String cDate = (String) doi.readObject();
-                              doi.close();
-                              if (cDate.equals(update)) {
-                              ObjectInputStream coi = new ObjectInputStream(cin);
-                              ArrayList<ampacheObject> goods = (ArrayList) coi.readObject();
-                              coi.close();
-                              return goods;
-                              }
-                              } catch (Exception poo) {
-                              /* cache load failed for some reason 
-                              }
-                            */
                             append = "action=artists&auth=" + authToken; // + "&limit=100";
                             hand = new ampacheArtistParser();
                         } else if (directive[0].equals("artist_albums")) {
@@ -190,34 +183,70 @@ public class ampacheCommunicator
                             return; // new ArrayList();
                         }
                         
+                        /* we did not load from cache, so we'll need to fetch from server
+                         * and possibly save to the cache */
+                        if (!goodcache) {
+                            try {
+                                URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
+                                dataIn = new InputSource(theUrl.openStream());
+                            } catch (Exception poo) {
+                                error = poo.toString();
+                            }
+                            
+                            //we only want to cache artists :)
+                            if (directive[0].equals("artists")) {
+                                /* we just did a full fetch, write the cache! */
+                                try {
+                                    FileOutputStream dot = mCtxt.openFileOutput("date", 0);
+                                    FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
+                                    ObjectOutputStream dos = new ObjectOutputStream(dot);
+                                    dos.writeObject(update);
+                                    dos.close();
+                                    byte[] buf = new byte[1024];
+                                    int len;
+                                    InputStream in = dataIn.getByteStream();
+                                    while ((len = in.read(buf)) > 0) {
+                                        cot.write(buf, 0, len);
+                                    }
+                                    in.close();
+                                    cot.close();
+                                    dataIn = new InputSource(mCtxt.openFileInput("cache"));
+                                } catch (Exception poo) {
+                                    // We don't care about any exceptions in here
+                                }
+                            }
+                        }
+                        // all done loading data, now to parse
                         reader.setContentHandler(hand);
                         try {
-                            URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
-                            reader.parse(new InputSource(theUrl.openStream()));
+                            reader.parse(dataIn);
                         } catch (Exception poo) {
+                            error = poo.toString();;
                         }
-                        /*
-                          if (type.equals("artists")) {
-                          try {
-                          /* we just did a full fetch, write the cache! 
-                          FileOutputStream dot = mCtxt.openFileOutput("date", 0);
-                          FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
-                          ObjectOutputStream dos = new ObjectOutputStream(dot);
-                          dos.writeObject(update);
-                          dos.close();
-                          ObjectOutputStream cos = new ObjectOutputStream(cot);
-                          cos.writeObject(hand.data);
-                          cos.close();
-                          } catch (Exception poo) {
-                          /* so much for the cache 
-                          }
-                          } */
                         
-                        Message reply = new Message();
-                        reply.obj = hand.data;
+                        if (hand.error != null) {
+                            if (hand.errorCode == 401) {
+                                try {
+                                    ampacheCommunicator.this.perform_auth_request();
+                                    this.sendMessage(msg);
+                                } catch (Exception poo) {
+                                }
+                                return;
+                            }
+                            error = hand.error;
+                        }
+
+                        if (error == null) {
+                            reply.what = 0x1337;
+                            reply.obj = hand.data;
+                        } else {
+                            reply.what = 0x1338;
+                            reply.obj = error;
+                        }
                         try {
                             msg.replyTo.send(reply);
                         } catch (Exception poo) {
+                            //well shit, that sucks doesn't it
                         }
                     }
                 };
@@ -227,20 +256,20 @@ public class ampacheCommunicator
     
     private class dataHandler extends DefaultHandler {
         public ArrayList<ampacheObject> data = new ArrayList();
-    }
-
-    private class ampacheAuthParser extends DefaultHandler {
-        public String token = "";
-        public int artists= 0;
-        public String update = "";
-        private CharArrayWriter contents = new CharArrayWriter();
+        public String error = null;
+        public int errorCode = 0;
+        protected CharArrayWriter contents = new CharArrayWriter();
 
         public void startDocument() throws SAXException {
             
         }
-
+        
         public void endDocument() throws SAXException {
 
+        }
+
+        public void characters( char[] ch, int start, int length )throws SAXException {
+            contents.write( ch, start, length );
         }
 
         public void startElement( String namespaceURI,
@@ -248,12 +277,31 @@ public class ampacheCommunicator
                                   String qName,
                                   Attributes attr) throws SAXException {
 
+            if (localName.equals("error"))
+                errorCode = Integer.parseInt(attr.getValue("code"));
             contents.reset();
         }
 
         public void endElement( String namespaceURI,
                                 String localName,
                                 String qName) throws SAXException {
+            if (localName.equals("error")) {
+                error = contents.toString();
+            }
+        }
+        
+    }
+
+    private class ampacheAuthParser extends dataHandler {
+        public String token = "";
+        public int artists= 0;
+        public String update = "";
+
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+
+            super.endElement(namespaceURI, localName, qName);
 
             if (localName.equals("auth")) {
                 token = contents.toString();
@@ -267,41 +315,30 @@ public class ampacheCommunicator
                 update = contents.toString();
             }
         }
-        
-        public void characters( char[] ch, int start, int length )throws SAXException {
-            contents.write( ch, start, length );
-        }
     }
     
     private class ampacheArtistParser extends dataHandler {
         private Artist current;
-        private CharArrayWriter contents = new CharArrayWriter();
-
-        public void startDocument() throws SAXException {
-            
-        }
-        
-        public void endDocument() throws SAXException {
-
-        }
         
         public void startElement( String namespaceURI,
                                   String localName,
                                   String qName,
                                   Attributes attr) throws SAXException {
             
+            super.startElement(namespaceURI, localName, qName, attr);
+
             if (localName.equals("artist")) {
                 current = new Artist();
                 current.id = attr.getValue("id");
             }
-            
-            contents.reset();
         }
         
         public void endElement( String namespaceURI,
                                 String localName,
                                 String qName) throws SAXException {
             
+            super.endElement(namespaceURI, localName, qName);
+
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
@@ -310,85 +347,63 @@ public class ampacheCommunicator
                 data.add(current);
             }
 
-        }
-        
-        public void characters( char[] ch, int start, int length ) throws SAXException {
-            contents.write( ch, start, length );
         }
     }
     
     private class ampacheAlbumParser extends dataHandler {
         private Album current;
-        private CharArrayWriter contents = new CharArrayWriter();
-        
-        public void startDocument() throws SAXException {
-            
-        }
-        
-        public void endDocument() throws SAXException {
-            
-        }
         
         public void startElement( String namespaceURI,
                                   String localName,
                                   String qName,
                                   Attributes attr) throws SAXException {
             
+            super.startElement(namespaceURI, localName, qName, attr);
+
             if (localName.equals("album")) {
                 current = new Album();
                 current.id = attr.getValue("id");
             }
-            
-            contents.reset();
         }
         
         public void endElement( String namespaceURI,
                                 String localName,
                                 String qName) throws SAXException {
             
+            super.endElement(namespaceURI, localName, qName);
+
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
             if (localName.equals("album")) {
                 data.add(current);
             }
-        }
-        
-        public void characters( char[] ch, int start, int length )throws SAXException {
-            contents.write( ch, start, length );
         }
     }
     
 
     private class ampacheSongParser extends dataHandler {
         private Song current;
-        private CharArrayWriter contents = new CharArrayWriter();
-        
-        public void startDocument() throws SAXException {
-            
-        }
-        
-        public void endDocument() throws SAXException {
-            
-        }
         
         public void startElement( String namespaceURI,
                                   String localName,
                                   String qName,
                                   Attributes attr) throws SAXException {
             
+            super.startElement(namespaceURI, localName, qName, attr);
+
             if (localName.equals("song")) {
                 current = new Song();
                 current.id = attr.getValue("id");
             }
-            
-            contents.reset();
         }
         
         public void endElement( String namespaceURI,
                                 String localName,
                                 String qName) throws SAXException {
             
+            super.endElement(namespaceURI, localName, qName);
+
             if (localName.equals("song")) {
                 data.add(current);
             }
@@ -416,10 +431,6 @@ public class ampacheCommunicator
             if (localName.equals("genre")) {
                 current.genre = contents.toString();
             }
-        }
-        
-        public void characters( char[] ch, int start, int length )throws SAXException {
-            contents.write( ch, start, length );
         }
     }
 

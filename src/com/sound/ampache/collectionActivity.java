@@ -49,7 +49,11 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         //Debug.enableEmulatorTraceOutput();
         //Debug.waitForDebugger();
 
+        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null)
+            amdroid.comm.ping();
+
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
+            Toast.makeText(this, "Login Failed: " + amdroid.comm.lastErr, Toast.LENGTH_LONG).show();
             Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
             startActivity(prefsIntent);
             return;
@@ -73,11 +77,18 @@ public final class collectionActivity extends ListActivity implements ampacheCom
         // and be prepared to handle the response
         dataReadyHandler = new Handler() {
             public void handleMessage(Message msg) {
-                dismissDialog(0);
-                //list = (ArrayList) msg.obj;
-                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, (ArrayList) msg.obj));
+                if (msg.what == 0x1336) {
+
+                }
+                if (msg.what == 0x1337) {
+                    dismissDialog(0);
+                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, (ArrayList) msg.obj));
+                } else if (msg.what == 0x1338) {
+                    Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                }
+
             }
-        };
+            };
         
         // Are we being 're-created' ?
         list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;

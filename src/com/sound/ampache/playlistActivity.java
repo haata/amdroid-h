@@ -159,7 +159,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
         amdroid.mp.reset();
         try {
-            amdroid.mp.setDataSource(chosen.url);
+            amdroid.mp.setDataSource(chosen.liveUrl());
             amdroid.mp.prepareAsync();
         } catch (java.io.IOException blah) {
             return;

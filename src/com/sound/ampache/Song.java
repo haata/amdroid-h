@@ -12,6 +12,10 @@ public class Song extends ampacheObject {
     public String getType() {
 	return "song";
     }
+
+    public String liveUrl() {
+        return url.replaceAll("auth=[^&]+","auth=" + com.sound.ampache.amdroid.comm.authToken);
+    }
     
     public boolean hasChildren() {
 	return false;
