@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.TableLayout;
@@ -75,6 +76,19 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.playlist_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.pl_clear:
+            if (isPlaying())
+                amdroid.mp.stop();
+            amdroid.playingIndex = 0;
+            pla.clearItems();
+            return true;
+        }
         return true;
     }
 
@@ -219,6 +233,11 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             return position;
         }
 
+        public void clearItems() {
+            amdroid.playlistCurrent.clear();
+            notifyDataSetChanged();
+        }
+
         public View getView(int position, View convertView, ViewGroup parent) {
             plI holder;
             Song cur = amdroid.playlistCurrent.get(position);
@@ -231,7 +250,6 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.other = (TextView) convertView.findViewById(R.id.other);
                 holder.art = (ImageView) convertView.findViewById(R.id.art);
-                //holder.isplaying = (ImageView) convertView.findViewById(R.id.isplaying);
 
                 convertView.setTag(holder);
             } else {
@@ -240,7 +258,6 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
             holder.title.setText(cur.name);
             holder.other.setText(cur.artist + " - " + cur.album);
-            //holder.art.setImageURI(Uri.parse(cur.art));
             if (amdroid.mp.isPlaying() && amdroid.playingIndex == position) {
                 holder.art.setVisibility(View.VISIBLE);
             } else {

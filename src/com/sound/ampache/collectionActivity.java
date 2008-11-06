@@ -31,12 +31,12 @@ import java.io.*;
 import com.sound.ampache.objects.*;
 import java.lang.Integer;
 
-public final class collectionActivity extends ListActivity implements ampacheCommunicator.ampacheDataReceiver
+public final class collectionActivity extends ListActivity 
 {
 
-    private ArrayList<ampacheObject> list = new ArrayList();
     public Handler dataReadyHandler;
     private String title;
+    private ArrayList<ampacheObject> list = null;
 
     /** Called when the activity is first created. */
     @Override
@@ -81,18 +81,22 @@ public final class collectionActivity extends ListActivity implements ampacheCom
 
                 }
                 if (msg.what == 0x1337) {
+                    list = (ArrayList) msg.obj;
+                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list));
                     dismissDialog(0);
-                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, (ArrayList) msg.obj));
                 } else if (msg.what == 0x1338) {
+                    dismissDialog(0);
                     Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
                 }
-
+                
             }
             };
         
         // Are we being 're-created' ?
-        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getSerializable("list") : null;
+        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getParcelableArrayList("list") : null;
+
         // If not, queue up a data fetch
+        
         if (list == null) {
             //Tell them we're loading
             showDialog(0);
@@ -108,28 +112,16 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
             //req.start();
         } else {
-            dismissDialog(0);
-            setListAdapter(new collectionAdapter(this, R.layout.browsable_item,list));
+            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
         }
 
         getListView().setTextFilterEnabled(true);
 
     }
     
-    //The fetch thread calls this function.
-    public void receiveObjects(ArrayList data) {
-        list = data;
-        dismissDialog(0);
-        //Notify the original thread that data is ready
-        Message msg = new Message();
-        msg.what = 0x1337;
-        this.dataReadyHandler.sendMessage(msg);
-    }
-
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
-        //Toast.makeText(this, "Saving instance..", Toast.LENGTH_SHORT).show();
-        bundle.putSerializable("list", list);
+        bundle.putParcelableArrayList("list", list);
     }
 
 
@@ -197,20 +189,6 @@ public final class collectionActivity extends ListActivity implements ampacheCom
             mCtx = context;
             mInflater = LayoutInflater.from(context);
         }
-
-        /*
-        public int getCount() {
-            return myList.size();
-        }
-
-        public Object getItem(int position) {
-            return myList.get(position);
-        }
-
-        public long getItemId(int position) {
-            return position;
-        }
-        */
 
         public View getView(int position, View convertView, ViewGroup parent) {
             bI holder;

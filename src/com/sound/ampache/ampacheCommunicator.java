@@ -101,6 +101,9 @@ public class ampacheCommunicator
         } else if (type.equals("album_songs")) {
             append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheSongParser();
+        } else if (type.equals("artist_songs")) {
+            append = "action=artist_songs&filter=" + filter + "&auth=" + authToken;
+            hand = new ampacheSongParser();
         } else if (type.equals("song")) {
             append = "action=song&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheSongParser();
