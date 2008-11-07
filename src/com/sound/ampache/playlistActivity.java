@@ -45,7 +45,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         amdroid.mp.setOnCompletionListener(this);
         TextView menuText = (TextView) findViewById(R.id.menutext);
         mc = new MediaController(this, false);
-
+     
         menuText.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
                     mc.show();
@@ -54,16 +54,23 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 public void onPrepared(MediaPlayer mp) {
                     amdroid.mp.start();
-                    mc.show();
+                    if (amdroid.playListVisible) {
+                        mc.show();
+                        mc.setEnabled(true);
+                    }
                 }});
 
         lv = (ListView) findViewById(R.id.list);
         lv.setOnItemClickListener(this);
 
         mc.setAnchorView(menuText);
-        mc.setEnabled(true);
         mc.setPrevNextListeners(new nextList(), new prevList());
 
+        if (amdroid.mp.isPlaying()) {
+            mc.setEnabled(true);
+        } else {
+            mc.setEnabled(true);
+        }
         mc.setMediaPlayer(this);
 
         pla = new playlistAdapter(this);
@@ -72,6 +79,17 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        amdroid.playListVisible = true;
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onResume();
+        amdroid.playListVisible = false;
+    }
 
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -87,6 +105,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
                 amdroid.mp.stop();
             amdroid.playingIndex = 0;
             pla.clearItems();
+            mc.setEnabled(false);
             return true;
         }
         return true;

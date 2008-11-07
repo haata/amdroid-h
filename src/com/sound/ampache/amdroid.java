@@ -21,7 +21,7 @@ public final class amdroid extends Application {
     public static MediaPlayer mp;
     public static int playingIndex;
     public static int bufferPC;
-    public static Boolean playing;
+    public static Boolean playListVisible;
 
     public void onCreate() {
         //Debug.waitForDebugger();

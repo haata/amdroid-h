@@ -110,7 +110,6 @@ public final class collectionActivity extends ListActivity
             //tell it how to handle the stuff
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
-            //req.start();
         } else {
             setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
         }
