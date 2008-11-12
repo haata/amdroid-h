@@ -69,12 +69,11 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         if (amdroid.mp.isPlaying()) {
             mc.setEnabled(true);
         } else {
-            mc.setEnabled(true);
+            mc.setEnabled(false);
         }
+
         mc.setMediaPlayer(this);
-
         pla = new playlistAdapter(this);
-
         lv.setAdapter(pla);
 
     }
@@ -175,12 +174,13 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     public void play() {
         if (amdroid.playingIndex >= amdroid.playlistCurrent.size()) {
             amdroid.playingIndex = amdroid.playlistCurrent.size();
-            mc.setEnabled(false);;
+            mc.setEnabled(false);
             return;
         }
 
         if (amdroid.playingIndex < 0) {
             amdroid.playingIndex = 0;
+            mc.setEnabled(false);
             return;
         }
 
