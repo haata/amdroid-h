@@ -27,6 +27,11 @@ import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.widget.Toast;
 import android.net.Uri;
+import java.io.ObjectInputStream;
+import java.io.FileInputStream;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
 {
@@ -78,6 +83,9 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     }
 
+
+    /* on pause and on resume make sure that we don't attempt to display the MediaController when 
+     * we can't see it */
     @Override
     protected void onResume() {
         super.onResume();
@@ -105,30 +113,40 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             amdroid.playingIndex = 0;
             pla.clearItems();
             mc.setEnabled(false);
-            return true;
+            break;
+
+        case R.id.pl_save:
+            try {
+                FileOutputStream pout = openFileOutput("playlist", 0);
+                ObjectOutputStream pos = new ObjectOutputStream(pout);
+                pos.writeObject(amdroid.playlistCurrent);
+                pout.close();
+            } catch (Exception poo) {
+                Toast.makeText(this, "Error: " + poo.toString(), Toast.LENGTH_LONG).show();
+            }
+            break;
+
+        case R.id.pl_load:
+            if (isPlaying())
+                amdroid.mp.stop();
+            amdroid.playingIndex = 0;
+            mc.setEnabled(false);
+            try {
+                FileInputStream pin = openFileInput("playlist");
+                ObjectInputStream poin = new ObjectInputStream(pin);
+                amdroid.playlistCurrent = (ArrayList<Song>) poin.readObject();
+                pin.close();
+            } catch (Exception poo) {
+                Toast.makeText(this, "Error: " + poo.toString(), Toast.LENGTH_LONG).show();
+            }
+            pla.refresh();
+            break;
         }
         return true;
     }
 
 
-    private class prevList implements OnClickListener
-    {
-        public void onClick(View v) {
-            turnOffPlayingView();
-            amdroid.playingIndex--;
-            play();
-        }
-    }
-
-    private class nextList implements OnClickListener
-    {
-        public void onClick(View v) {
-            turnOffPlayingView();
-            amdroid.playingIndex++;
-            play();
-        }
-    }
-
+    /* callbacks for the MediaPlayer and MediaController */
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
         amdroid.bufferPC = percent;
     }
@@ -200,6 +218,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         turnOnPlayingView();
     }
 
+    /* These functions help with displaying the |> icon next to the currently playing song */
     private void turnOffPlayingView() {
         if (amdroid.playingIndex >= lv.getFirstVisiblePosition() && amdroid.playingIndex <= lv.getLastVisiblePosition()) {
             View holder = lv.getChildAt(amdroid.playingIndex - lv.getFirstVisiblePosition());
@@ -232,6 +251,26 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         play();
     }
 
+    /* our child classes */
+
+    private class prevList implements OnClickListener
+    {
+        public void onClick(View v) {
+            turnOffPlayingView();
+            amdroid.playingIndex--;
+            play();
+        }
+    }
+
+    private class nextList implements OnClickListener
+    {
+        public void onClick(View v) {
+            turnOffPlayingView();
+            amdroid.playingIndex++;
+            play();
+        }
+    }
+
     private class playlistAdapter extends BaseAdapter
     {
         private LayoutInflater mInflater;
@@ -250,6 +289,10 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
         public long getItemId(int position) {
             return position;
+        }
+
+        public void refresh() {
+            notifyDataSetChanged();
         }
 
         public void clearItems() {

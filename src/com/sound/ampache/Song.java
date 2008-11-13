@@ -2,8 +2,13 @@ package com.sound.ampache.objects;
 import java.util.ArrayList;
 import android.os.Parcelable;
 import android.os.Parcel;
+import java.io.Externalizable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.IOException;
+import java.lang.ClassNotFoundException;
 
-public class Song extends ampacheObject {
+public class Song extends ampacheObject implements Externalizable {
     public String artist = "";
     public String art = "";
     public String url = "";
@@ -14,8 +19,9 @@ public class Song extends ampacheObject {
         return "song";
     }
 
+    /* Replace the old session id with our current one */
     public String liveUrl() {
-        return url.replaceAll("auth=[^&]+","auth=" + com.sound.ampache.amdroid.comm.authToken);
+        return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken);
     }
     
     public boolean hasChildren() {
@@ -57,5 +63,27 @@ public class Song extends ampacheObject {
                     return new Song[size];
                 }
             };
+
+    /* for external */
+
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        id = (String) in.readObject();
+        name = (String) in.readObject();
+        artist = (String) in.readObject();
+        art = (String) in.readObject();
+        url = (String) in.readObject();
+        album = (String) in.readObject();
+        genre = (String) in.readObject();
+    }
+
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(id);
+        out.writeObject(name);
+        out.writeObject(artist);
+        out.writeObject(art);
+        out.writeObject(url);
+        out.writeObject(album);
+        out.writeObject(genre);
+    }
 
 }
