@@ -16,12 +16,9 @@ public class Playlist extends ampacheObject {
         return "playlist_songs";
     }
 
-    public ArrayList allChildren() {
-        try {
-            return com.sound.ampache.amdroid.comm.fetch("playlist_songs", this.id);
-        } catch (Exception poo) {
-            return new ArrayList();
-        }
+    public String[] allChildren() {
+        String[] dir = {"playlist_songs", this.id};
+        return dir;
     }
 
     public Playlist() {

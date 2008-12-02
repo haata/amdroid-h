@@ -32,8 +32,8 @@ public class Song extends ampacheObject implements Externalizable {
         return false;
     }
 
-    public ArrayList allChildren() {
-        return new ArrayList();
+    public String[] allChildren() {
+        return null;
     }
 
     public Song() {

@@ -87,6 +87,8 @@ public final class collectionActivity extends ListActivity
                 } else if (msg.what == 0x1338) {
                     dismissDialog(0);
                     Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                } else if (msg.what == 0x1339) {
+                    amdroid.playlistCurrent.addAll((ArrayList) msg.obj);
                 }
                 
             }
@@ -106,7 +108,8 @@ public final class collectionActivity extends ListActivity
             
             //tell it what to do
             requestMsg.obj = directive;
-            
+            requestMsg.what = 0x1337;
+
             //tell it how to handle the stuff
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
@@ -231,7 +234,12 @@ public final class collectionActivity extends ListActivity
         public void onClick(View v) {
             Toast.makeText(mCtx, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_SHORT).show();
             if (cur.hasChildren()) {
-                amdroid.playlistCurrent.addAll(cur.allChildren());
+                Message requestMsg = new Message();
+                requestMsg.obj = cur.allChildren();
+                requestMsg.what = 0x1339;
+                //tell it how to handle the stuff
+                requestMsg.replyTo = new Messenger (collectionActivity.this.dataReadyHandler);
+                amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
             } else {
                 amdroid.playlistCurrent.add((Song) cur);
             }

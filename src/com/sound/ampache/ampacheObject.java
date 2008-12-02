@@ -19,7 +19,7 @@ public abstract class ampacheObject implements Parcelable {
 
     abstract public String childString();
 
-    abstract public ArrayList allChildren();
+    abstract public String[] allChildren();
 
     abstract public boolean hasChildren();
 

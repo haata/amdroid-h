@@ -12,18 +12,15 @@ public class Genre extends ampacheObject {
         return true;
     }
 
-    public ArrayList allChildren() {
-        try {
-            return com.sound.ampache.amdroid.comm.fetch("genre_songs", this.id);
-        } catch (Exception poo) {
-            return new ArrayList();
-        }
+    public String[] allChildren() {
+        String[] dir = {"genre_songs", this.id};
+        return dir;
     }
 
     public String childString() {
         return "genre_artists";
     }
-
+    
     public Genre() {
     }
 

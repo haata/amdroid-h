@@ -262,7 +262,7 @@ public class ampacheCommunicator
                         }
 
                         if (error == null) {
-                            reply.what = 0x1337;
+                            reply.what = msg.what;
                             reply.obj = hand.data;
                         } else {
                             reply.what = 0x1338;

@@ -16,12 +16,9 @@ public class Album extends ampacheObject {
 	return true;
     }
 
-    public ArrayList allChildren() {
-        try {
-            return com.sound.ampache.amdroid.comm.fetch("album_songs", this.id);
-        } catch (Exception poo) {
-            return new ArrayList();
-        }
+    public String[] allChildren() {
+        String[] dir = {"album_songs", this.id};
+        return dir;
     }
 
     public Album() {
