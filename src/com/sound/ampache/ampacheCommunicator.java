@@ -90,46 +90,6 @@ public class ampacheCommunicator
         artists = hand.artists;
         update = hand.update;
     }
-
-    public ArrayList fetch(String type, String filter) throws Exception{
-        String append = "";
-        dataHandler hand;
-
-        if (type.equals("artists")) {
-            boolean goodcache = true;
-            append = "action=artists&auth=" + authToken; // + "&limit=100";
-            hand = new ampacheArtistParser();
-        } else if (type.equals("artist_albums")) {
-            append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
-            hand = new ampacheAlbumParser();
-        } else if (type.equals("playlist_songs")) {
-            append = "action=playlist_songs&filter=" + filter + "&auth=" + authToken;
-            hand = new ampachePlaylistParser();
-        } else if (type.equals("album_songs")) {
-            append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
-            hand = new ampacheSongParser();
-        } else if (type.equals("artist_songs")) {
-            append = "action=artist_songs&filter=" + filter + "&auth=" + authToken;
-            hand = new ampacheSongParser();
-        } else if (type.equals("song")) {
-            append = "action=song&filter=" + filter + "&auth=" + authToken;
-            hand = new ampacheSongParser();
-        } else {
-            return new ArrayList();
-        }
-        
-        reader.setContentHandler(hand);
-        reader.parse(new InputSource(fetchFromServer(append)));
-        
-        /* handle expired sessions */
-        if (hand.error != null) {
-            if (hand.errorCode == 401) {
-                this.perform_auth_request();
-                return this.fetch(type, filter);
-            }
-        }
-        return hand.data;
-    }
    
     public InputStream fetchFromServer(String append) throws Exception {
         URL fullUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);

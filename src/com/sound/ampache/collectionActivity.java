@@ -49,9 +49,11 @@ public final class collectionActivity extends ListActivity
         //Debug.enableEmulatorTraceOutput();
         //Debug.waitForDebugger();
 
+        // Verify a valid session. The if statement should probably not be there.
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null)
             amdroid.comm.ping();
 
+        // We've tried to login, and failed, so present the user with the preferences pane
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
             Toast.makeText(this, "Login Failed: " + amdroid.comm.lastErr, Toast.LENGTH_LONG).show();
             Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
