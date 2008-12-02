@@ -76,7 +76,11 @@ public class ampacheCommunicator
         ampacheAuthParser hand = new ampacheAuthParser();
         reader.setContentHandler(hand);
         String user = prefs.getString("server_username_preference", "");
-        reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001&user="+user)));
+        try {
+            reader.parse(new InputSource(fetchFromServer("action=handshake&auth="+hash+"&timestamp="+time+"&version=350001&user="+user)));
+        } catch (Exception poo) {
+            lastErr = "Could not connect to server";
+        }
 
         if (hand.errorCode != 0) {
             lastErr = hand.error;
@@ -98,6 +102,9 @@ public class ampacheCommunicator
         } else if (type.equals("artist_albums")) {
             append = "action=artist_albums&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheAlbumParser();
+        } else if (type.equals("playlist_songs")) {
+            append = "action=playlist_songs&filter=" + filter + "&auth=" + authToken;
+            hand = new ampachePlaylistParser();
         } else if (type.equals("album_songs")) {
             append = "action=album_songs&filter=" + filter + "&auth=" + authToken;
             hand = new ampacheSongParser();
@@ -158,6 +165,8 @@ public class ampacheCommunicator
                         ArrayList<ampacheObject> goods = null;
                         InputSource dataIn = null;
                         
+                        append = "action=" + directive[0];
+
                         if (directive[0].equals("artists")) {
                             try {
                                 /* try our cache */
@@ -174,18 +183,31 @@ public class ampacheCommunicator
                                 goodcache = false;  // cache failed, probably the files don't exist
                             }
                             
-                            append = "action=artists&auth=" + authToken; // + "&limit=100";
                             hand = new ampacheArtistParser();
                         } else if (directive[0].equals("artist_albums")) {
-                            append = "action=artist_albums&filter=" + directive[1] + "&auth=" + authToken;
+                            append += "&filter=" + directive[1];
                             hand = new ampacheAlbumParser();
                         } else if (directive[0].equals("album_songs")) {
-                            append = "action=album_songs&filter=" + directive[1] + "&auth=" + authToken;
+                            append += "&filter=" + directive[1];
+                            hand = new ampacheSongParser();        
+                        } else if (directive[0].equals("playlist_songs")) {
+                            append += "&filter=" + directive[1];
                             hand = new ampacheSongParser();
+                        } else if (directive[0].equals("genre_artists")) {
+                            append += "&filter=" + directive[1];
+                            hand = new ampacheArtistParser();
+                        } else if (directive[0].equals("genres")) {
+                            hand = new ampacheGenreParser();
+                        } else if (directive[0].equals("albums")) {
+                            hand = new ampacheAlbumParser();
+                        } else if (directive[0].equals("playlists")) {
+                            hand = new ampachePlaylistParser();
                         } else {
                             return; // new ArrayList();
                         }
                         
+                        append += "&auth=" + authToken;
+
                         /* we did not load from cache, so we'll need to fetch from server
                          * and possibly save to the cache */
                         if (!goodcache) {
@@ -314,7 +336,7 @@ public class ampacheCommunicator
                 artists = Integer.parseInt(contents.toString());
             }
 
-            if (localName.equals("update")) {
+            if (localName.equals("add")) {
                 update = contents.toString();
             }
         }
@@ -384,7 +406,68 @@ public class ampacheCommunicator
         }
     }
     
+    private class ampacheGenreParser extends dataHandler {
+        private Genre current;
+        
+        public void startElement( String namespaceURI,
+                                  String localName,
+                                  String qName,
+                                  Attributes attr) throws SAXException {
+            
+            super.startElement(namespaceURI, localName, qName, attr);
 
+            if (localName.equals("genre")) {
+                current = new Genre();
+                current.id = attr.getValue("id");
+            }
+        }
+        
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+            
+            super.endElement(namespaceURI, localName, qName);
+
+            if (localName.equals("name")) {
+                current.name = contents.toString();
+            }
+            if (localName.equals("genre")) {
+                data.add(current);
+            }
+        }
+    }
+    
+    private class ampachePlaylistParser extends dataHandler {
+        private Playlist current;
+        
+        public void startElement( String namespaceURI,
+                                  String localName,
+                                  String qName,
+                                  Attributes attr) throws SAXException {
+            
+            super.startElement(namespaceURI, localName, qName, attr);
+
+            if (localName.equals("playlist")) {
+                current = new Playlist();
+                current.id = attr.getValue("id");
+            }
+        }
+        
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+            
+            super.endElement(namespaceURI, localName, qName);
+
+            if (localName.equals("name")) {
+                current.name = contents.toString();
+            }
+            if (localName.equals("playlist")) {
+                data.add(current);
+            }
+        }
+    }
+    
     private class ampacheSongParser extends dataHandler {
         private Song current;
         

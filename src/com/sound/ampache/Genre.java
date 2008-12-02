@@ -3,42 +3,42 @@ import java.util.ArrayList;
 import android.os.Parcelable;
 import android.os.Parcel;
 
-public class Album extends ampacheObject {
+public class Genre extends ampacheObject {
     public String getType() {
-        return "Album";
-    }
-
-    public String childString() {
-        return "album_songs";
+        return "Genre";
     }
 
     public boolean hasChildren() {
-	return true;
+        return true;
     }
 
     public ArrayList allChildren() {
         try {
-            return com.sound.ampache.amdroid.comm.fetch("album_songs", this.id);
+            return com.sound.ampache.amdroid.comm.fetch("genre_songs", this.id);
         } catch (Exception poo) {
             return new ArrayList();
         }
     }
 
-    public Album() {
+    public String childString() {
+        return "genre_artists";
     }
 
-    public Album(Parcel in) {
+    public Genre() {
+    }
+
+    public Genre(Parcel in) {
         super.readFromParcel(in);
     }
 
     public static final Parcelable.Creator CREATOR
         = new Parcelable.Creator() {
-                public Album createFromParcel(Parcel in) {
-                    return new Album(in);
+                public Genre createFromParcel(Parcel in) {
+                    return new Genre(in);
                 }
 
-                public Album[] newArray(int size) {
-                    return new Album[size];
+                public Genre[] newArray(int size) {
+                    return new Genre[size];
                 }
             };
 }

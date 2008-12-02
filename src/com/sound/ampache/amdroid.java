@@ -22,6 +22,7 @@ public final class amdroid extends Application {
     public static int playingIndex;
     public static int bufferPC;
     public static Boolean playListVisible;
+    public static Boolean confChanged;
 
     public void onCreate() {
         //Debug.waitForDebugger();

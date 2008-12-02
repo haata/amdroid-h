@@ -16,7 +16,11 @@ public class Song extends ampacheObject implements Externalizable {
     public String genre = "";
 
     public String getType() {
-        return "song";
+        return "Song";
+    }
+
+    public String childString() {
+        return "";
     }
 
     /* Replace the old session id with our current one */

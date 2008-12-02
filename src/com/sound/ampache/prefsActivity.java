@@ -16,5 +16,12 @@ public class prefsActivity extends PreferenceActivity {
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
     }
+
+    protected void onDestroy(Bundle savedInstanceState) {
+        /* we want to tell other activities that we need to reload */
+        super.onDestroy();
+        amdroid.confChanged = true;
+        amdroid.comm.authToken = null;
+    }
 }
 

@@ -8,7 +8,7 @@
     <string name="summary_server_preference">Enter the full URL for your ampache server (ie: http://example.com/ampache )</string>
     <string name="dialog_server_preference">URL</string>
     <string name="title_username_preference">Ampache Username</string>
-    <string name="summary_username_preference">You can leave this blank</string>
+    <string name="summary_username_preference"></string>
     <string name="dialog_username_preference">username</string>
     <string name="title_password_preference">Ampache Password</string>
     <string name="summary_password_preference"></string>

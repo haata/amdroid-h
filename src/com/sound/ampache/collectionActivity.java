@@ -67,9 +67,9 @@ public final class collectionActivity extends ListActivity
 
         if (directive == null) {
             directive = new String[2];
-            directive[0] = "artists";
+            directive[0] = "playlists";
             directive[1] = "";
-            title = "Artists";
+            title = "Playlists";
         }
 
         setTitle(title);
@@ -117,6 +117,13 @@ public final class collectionActivity extends ListActivity
         getListView().setTextFilterEnabled(true);
 
     }
+
+    protected void onResume(Bundle bundle) {
+        if (amdroid.confChanged) {
+            amdroid.confChanged = false;
+            setIntent(getIntent());
+        }
+    }
     
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
@@ -129,16 +136,13 @@ public final class collectionActivity extends ListActivity
         if (val == null)
             return;
         Intent intent = new Intent().setClass(this, collectionActivity.class);
-        if (val.getType().equals("artist")) {
-            String[] dir = {"artist_albums", val.id};
-            intent = intent.putExtra("directive", dir).putExtra("title", "Artist: " + val.toString());
-        } else if (val.getType().equals("album")) {
-            String[] dir = {"album_songs", val.id};
-            intent = intent.putExtra("directive", dir).putExtra("title", "Album: " + val.toString());
-        } else if (val.getType().equals("song")) {
+        if (val.getType().equals("Song")) {
             Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
             amdroid.playlistCurrent.add((Song) val);
             return;
+        } else {
+            String[] dir = {val.childString(), val.id};
+            intent = intent.putExtra("directive", dir).putExtra("title", val.getType() + ": " + val.toString());
         }
         startActivity(intent);
     }
