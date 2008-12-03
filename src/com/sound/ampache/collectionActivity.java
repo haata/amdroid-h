@@ -112,6 +112,7 @@ public final class collectionActivity extends ListActivity
                 requestMsg.arg2 = amdroid.comm.songs;
             } else {
                 requestMsg.what = 0x1337;
+                getListView().setTextFilterEnabled(true);
             }
 
             //tell it what to do
@@ -121,10 +122,9 @@ public final class collectionActivity extends ListActivity
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
         } else {
-            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list, list.size()));
+            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
+            getListView().setTextFilterEnabled(true);
         }
-
-        getListView().setTextFilterEnabled(true);
 
     }
 
@@ -173,6 +173,7 @@ public final class collectionActivity extends ListActivity
     private class dataHandler extends Handler {
 
         public Boolean stop = false;
+        private collectionAdapter ca;
 
         public void handleMessage(Message msg) {
             if (stop)
@@ -184,7 +185,8 @@ public final class collectionActivity extends ListActivity
                 
                 /* first inc, hid the dialog and set the adapter */
                 if (msg.arg1 == 0) {
-                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, msg.arg2));
+                    ca = new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list);
+                    setListAdapter(ca);
                     dismissDialog(0);
                     setProgressBarIndeterminateVisibility(true);
                 }
@@ -198,17 +200,20 @@ public final class collectionActivity extends ListActivity
                     requestMsg.arg2 = msg.arg2;
                     requestMsg.replyTo = new Messenger (this);
                     amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+                    ca.notifyDataSetChanged();
                 } else {
                     /* we've completed incremental fetch, cache it baby! */
+                    ca.notifyDataSetChanged();
                     amdroid.cache.putParcelableArrayList(directive[0], list);
                     setProgressBarIndeterminateVisibility(false);
+                    getListView().setTextFilterEnabled(true);
                     isFetching = false;
                 }
                 break;
             case (0x1337):
                 /* Handle primary updates */
                 list = (ArrayList) msg.obj;
-                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, list.size()));
+                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list));
                 dismissDialog(0);
                 isFetching = false;
                 break;
@@ -231,23 +236,12 @@ public final class collectionActivity extends ListActivity
         private Context mCtx;
         private int resid;
         private LayoutInflater mInflater;
-        private int size;
-
         
-        public collectionAdapter(Context context, int resid, ArrayList list, int size) {
+        public collectionAdapter(Context context, int resid, ArrayList list) {
             super(context, resid, list);
             this.resid = resid;
-            this.size = size;
             mCtx = context;
             mInflater = LayoutInflater.from(context);
-        }
-
-        public int getCount() {
-            return size;
-        }
-
-        public ampacheObject getItem(int position) {
-            return (position < list.size()) ? list.get(position) : null;
         }
 
         public View getView(int position, View convertView, ViewGroup parent) {
