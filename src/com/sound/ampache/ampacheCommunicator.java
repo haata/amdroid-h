@@ -115,6 +115,7 @@ public class ampacheCommunicator
         private String filter;
         
         public Handler incomingRequestHandler;
+        public Boolean stop = false;
         
         public void run() {
             Looper.prepare();
@@ -168,12 +169,22 @@ public class ampacheCommunicator
 
                         append += "&auth=" + authToken;
 
+                        if (stop == true) {
+                            stop = false;
+                            return;
+                        }
+
                         /* now we fetch */
                         try {
                             URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
                             dataIn = new InputSource(theUrl.openStream());
                         } catch (Exception poo) {
                             error = poo.toString();
+                        }
+
+                        if (stop == true) {
+                            stop = false;
+                            return;
                         }
 
                         /* all done loading data, now to parse */
@@ -194,6 +205,11 @@ public class ampacheCommunicator
                                 return;
                             }
                             error = hand.error;
+                        }
+
+                        if (stop == true) {
+                            stop = false;
+                            return;
                         }
 
                         if (error == null) {

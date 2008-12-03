@@ -1,22 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent" 
-  android:layout_height="fill_parent"
-  android:stretchColumns="*" >
+             android:layout_width="fill_parent" 
+             android:layout_height="fill_parent"
+             android:stretchColumns="*" >
+  
+  <TableRow android:paddingTop="30dip" >
 
-  <TableRow>
-    <Button android:text="Artists" android:id="@+id/artists" />
-    <Button android:text="Albums" android:id="@+id/albums" />
+    <Button android:text="Artists" 
+            android:id="@+id/artists" 
+            android:height="100dip" 
+            android:width="100dip" 
+            android:textSize="25dip" />
+
+    <Button android:text="Albums" 
+            android:id="@+id/albums"
+            android:height="100dip" 
+            android:width="100dip" 
+            android:textSize="25dip"/>
+
   </TableRow>
+  
+  <TableRow android:paddingTop="30dip">
+    
+    <Button android:text="Songs"
+            android:id="@+id/songs" 
+            android:height="100dip"
+            android:width="100dip" 
+            android:textSize="25dip" />
 
-  <TableRow>
-    <Button android:text="Songs" android:id="@+id/songs" />
-    <Button android:text="Playlists" android:id="@+id/playlists" />
+    <Button android:text="Playlists" 
+            android:id="@+id/playlists" 
+            android:height="100dip" 
+            android:width="100dip" 
+            android:textSize="25dip"/>
+
   </TableRow>
+  
+  <TableRow android:paddingTop="30dip">
 
-  <TableRow>
-    <Button android:text="Player" android:id="@+id/player" />
-    <Button android:text="Settings" android:id="@+id/settings" />
+    <Button android:text="Player" 
+            android:id="@+id/player" 
+            android:height="100dip" 
+            android:width="100dip" 
+            android:textSize="25dip" />
+    
+    <Button android:text="Settings"
+            android:id="@+id/settings"
+            android:height="100dip"
+            android:width="100dip" 
+            android:textSize="25dip" />
+
   </TableRow>
 
 </TableLayout>

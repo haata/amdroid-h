@@ -44,8 +44,11 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
+        
         setContentView(R.layout.playlist);
+
+        /* make sure we're authenticated */
+        amdroid.comm.ping();
 
         amdroid.mp.setOnBufferingUpdateListener(this);
         amdroid.mp.setOnCompletionListener(this);

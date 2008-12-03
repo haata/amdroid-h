@@ -49,9 +49,8 @@ public final class collectionActivity extends ListActivity
         //debugging crap
         //Debug.waitForDebugger();
 
-        // Verify a valid session. The if statement should probably not be there.
-        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null)
-            amdroid.comm.ping();
+        // Verify a valid session.
+        amdroid.comm.ping();
 
         // We've tried to login, and failed, so present the user with the preferences pane
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
@@ -138,9 +137,12 @@ public final class collectionActivity extends ListActivity
 
     public void onDestroy() {
         super.onDestroy();
-        dataReadyHandler.removeMessages(0x1336);
-        dataReadyHandler.removeMessages(0x1337);
-        dataReadyHandler.stop = true;
+        if (isFetching) {
+            dataReadyHandler.removeMessages(0x1336);
+            dataReadyHandler.removeMessages(0x1337);
+            dataReadyHandler.stop = true;
+            amdroid.requestHandler.stop = true;
+        }
     }
 
     protected void onListItemClick(ListView l, View v, int position, long id) {

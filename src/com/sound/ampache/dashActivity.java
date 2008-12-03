@@ -18,9 +18,9 @@ public class dashActivity extends Activity implements OnClickListener {
         setContentView(R.layout.dash);
 
         /* We need a listener for all of the buttons */
-
+        
         Button temp;
-        temp = (Button)findViewById(R.id.artists);
+        temp = (Button) findViewById(R.id.artists);
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.albums);
         temp.setOnClickListener(this);
@@ -32,12 +32,11 @@ public class dashActivity extends Activity implements OnClickListener {
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.settings);
         temp.setOnClickListener(this); 
+        
+        /* Verify a valid session */
+        amdroid.comm.ping();
 
-        // Verify a valid session. The if statement should probably not be there.                                      
-        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null)
-            amdroid.comm.ping();
-
-        // We've tried to login, and failed, so present the user with the preferences pane                             
+        /*  We've tried to login, and failed, so present the user with the preferences pane */
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
             Toast.makeText(this, "Login Failed: " + amdroid.comm.lastErr, Toast.LENGTH_LONG).show();
             Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
