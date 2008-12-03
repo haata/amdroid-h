@@ -77,6 +77,15 @@ public final class collectionActivity extends ListActivity
 
         setTitle(title);
 
+        tidbits td = (tidbits) getLastNonConfigurationInstance();
+        if (td != null) {
+            dataReadyHandler = td.dh;
+            list = td.list;
+            dataReadyHandler.ca = new collectionAdapter(this, R.layout.browsable_item, list);
+            setListAdapter(dataReadyHandler.ca);
+            setProgressBarIndeterminateVisibility(true);
+            return;
+        }
         // and be prepared to handle the response
         dataReadyHandler = new dataHandler();
         
@@ -128,6 +137,16 @@ public final class collectionActivity extends ListActivity
 
     }
 
+    public Object onRetainNonConfigurationInstance() {
+        if (isFetching) {
+            tidbits td = new tidbits();
+            td.dh = dataReadyHandler;
+            td.list = list;
+            return td;
+        }
+        return null;
+    }
+    
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
         if (!isFetching) {
@@ -170,10 +189,16 @@ public final class collectionActivity extends ListActivity
         return dialog;
     }
 
+    private class tidbits {
+        public dataHandler dh;
+        public ArrayList list;
+        public collectionAdapter ca;
+    }
+
     private class dataHandler extends Handler {
 
         public Boolean stop = false;
-        private collectionAdapter ca;
+        public collectionAdapter ca;
 
         public void handleMessage(Message msg) {
             if (stop)
@@ -188,7 +213,7 @@ public final class collectionActivity extends ListActivity
                     ca = new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list);
                     setListAdapter(ca);
                     dismissDialog(0);
-                    setProgressBarIndeterminateVisibility(true);
+                    collectionActivity.this.setProgressBarIndeterminateVisibility(true);
                 }
                
                 /* queue up the next inc */
@@ -255,6 +280,7 @@ public final class collectionActivity extends ListActivity
 
                 holder.title = (TextView) convertView.findViewById(R.id.title);
                 holder.add = (ImageView) convertView.findViewById(R.id.add);
+                holder.eq = new enqueueListener(mCtx);
 
                 convertView.setTag(holder);
             } else {
@@ -263,9 +289,8 @@ public final class collectionActivity extends ListActivity
             
             if (cur != null) {
                 holder.title.setText(cur.toString());
-                holder.add.setOnClickListener( new enqueueListener(mCtx, position, cur));
-            } else {
-                holder.title.setText("Loading...");
+                holder.eq.update(cur);
+                holder.add.setOnClickListener(holder.eq);
             }
             return convertView;
         }
@@ -273,13 +298,14 @@ public final class collectionActivity extends ListActivity
 
     private class enqueueListener implements View.OnClickListener
     {
-        int pos;
         Context mCtx;
         ampacheObject cur;
 
-        public enqueueListener(Context context, int position, ampacheObject cur) {
+        public enqueueListener(Context context) {
             mCtx = context;
-            pos = position;
+        }
+
+        public void update (ampacheObject cur) {
             this.cur = cur;
         }
 
@@ -301,5 +327,6 @@ public final class collectionActivity extends ListActivity
     static class bI {
         TextView title;
         ImageView add;
+        enqueueListener eq;
     }
 }
