@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.os.Debug;
+import android.os.Bundle;
 import android.media.MediaPlayer;
 
 public final class amdroid extends Application {
@@ -23,6 +24,7 @@ public final class amdroid extends Application {
     public static int bufferPC;
     public static Boolean playListVisible;
     public static Boolean confChanged;
+    protected static Bundle cache;
 
     public void onCreate() {
         //Debug.waitForDebugger();
@@ -32,6 +34,8 @@ public final class amdroid extends Application {
 
         playingIndex = 0;
         bufferPC = 0;
+
+        cache = new Bundle();
 
         try {
             comm = new ampacheCommunicator(prefs, this);

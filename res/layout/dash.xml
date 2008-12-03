@@ -5,18 +5,18 @@
   android:stretchColumns="*" >
 
   <TableRow>
-    <Button android:text="Artists"/>
-    <Button android:text="Albums" />
+    <Button android:text="Artists" android:id="@+id/artists" />
+    <Button android:text="Albums" android:id="@+id/albums" />
   </TableRow>
 
   <TableRow>
-    <Button android:text="Songs" />
-    <Button android:text="Playlists" />
+    <Button android:text="Songs" android:id="@+id/songs" />
+    <Button android:text="Playlists" android:id="@+id/playlists" />
   </TableRow>
 
   <TableRow>
-    <Button android:text="Player" />
-    <Button android:text="Settings" android:icon="@android:drawable/ic_media_play" />
+    <Button android:text="Player" android:id="@+id/player" />
+    <Button android:text="Settings" android:id="@+id/settings" />
   </TableRow>
 
 </TableLayout>

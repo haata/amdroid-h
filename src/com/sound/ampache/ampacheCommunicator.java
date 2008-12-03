@@ -26,7 +26,9 @@ public class ampacheCommunicator
 {
 
     public String authToken = "";
-    private int artists;
+    public int artists;
+    public int albums;
+    public int songs;
     private String update;
     private Context mCtxt;
     public String lastErr;
@@ -88,6 +90,8 @@ public class ampacheCommunicator
 
         authToken = hand.token;
         artists = hand.artists;
+        albums = hand.albums;
+        songs = hand.songs;
         update = hand.update;
     }
    
@@ -126,27 +130,15 @@ public class ampacheCommunicator
                         InputSource dataIn = null;
                         
                         append = "action=" + directive[0];
-
+                        
                         if (directive[0].equals("artists")) {
-                            try {
-                                /* try our cache */
-                                FileInputStream din = mCtxt.openFileInput("date");
-                                FileInputStream cin = mCtxt.openFileInput("cache");
-                                ObjectInputStream doi = new ObjectInputStream(din);
-                                String cDate = (String) doi.readObject();
-                                doi.close();
-                                if (cDate.equals(update)) {
-                                    goodcache = true;
-                                    dataIn = new InputSource(cin);
-                                }
-                            } catch (Exception poo) {
-                                goodcache = false;  // cache failed, probably the files don't exist
-                            }
-                            
                             hand = new ampacheArtistParser();
                         } else if (directive[0].equals("artist_albums")) {
                             append += "&filter=" + directive[1];
                             hand = new ampacheAlbumParser();
+                        } else if (directive[0].equals("artist_songs")) {
+                            append += "&filter=" + directive[1];
+                            hand = new ampacheSongParser();
                         } else if (directive[0].equals("album_songs")) {
                             append += "&filter=" + directive[1];
                             hand = new ampacheSongParser();        
@@ -162,46 +154,29 @@ public class ampacheCommunicator
                             hand = new ampacheAlbumParser();
                         } else if (directive[0].equals("playlists")) {
                             hand = new ampachePlaylistParser();
+                        } else if (directive[0].equals("songs")) {
+                            hand = new ampacheSongParser();
                         } else {
                             return; // new ArrayList();
                         }
                         
+                        if (msg.what == 0x1336) {
+                            append += "&offset=" + msg.arg1 + "&limit=100";
+                            reply.arg1 = msg.arg1;
+                            reply.arg2 = msg.arg2;
+                        }
+
                         append += "&auth=" + authToken;
 
-                        /* we did not load from cache, so we'll need to fetch from server
-                         * and possibly save to the cache */
-                        if (!goodcache) {
-                            try {
-                                URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
-                                dataIn = new InputSource(theUrl.openStream());
-                            } catch (Exception poo) {
-                                error = poo.toString();
-                            }
-                            
-                            //we only want to cache artists :)
-                            if (directive[0].equals("artists")) {
-                                /* we just did a full fetch, write the cache! */
-                                try {
-                                    FileOutputStream dot = mCtxt.openFileOutput("date", 0);
-                                    FileOutputStream cot = mCtxt.openFileOutput("cache", 0);
-                                    ObjectOutputStream dos = new ObjectOutputStream(dot);
-                                    dos.writeObject(update);
-                                    dos.close();
-                                    byte[] buf = new byte[1024];
-                                    int len;
-                                    InputStream in = dataIn.getByteStream();
-                                    while ((len = in.read(buf)) > 0) {
-                                        cot.write(buf, 0, len);
-                                    }
-                                    in.close();
-                                    cot.close();
-                                    dataIn = new InputSource(mCtxt.openFileInput("cache"));
-                                } catch (Exception poo) {
-                                    // We don't care about any exceptions in here
-                                }
-                            }
+                        /* now we fetch */
+                        try {
+                            URL theUrl = new URL(prefs.getString("server_url_preference", "") + "/server/xml.server.php?" + append);
+                            dataIn = new InputSource(theUrl.openStream());
+                        } catch (Exception poo) {
+                            error = poo.toString();
                         }
-                        // all done loading data, now to parse
+
+                        /* all done loading data, now to parse */
                         reader.setContentHandler(hand);
                         try {
                             reader.parse(dataIn);
@@ -279,7 +254,9 @@ public class ampacheCommunicator
 
     private class ampacheAuthParser extends dataHandler {
         public String token = "";
-        public int artists= 0;
+        public int artists = 0;
+        public int albums = 0;
+        public int songs = 0;
         public String update = "";
 
         public void endElement( String namespaceURI,
@@ -293,6 +270,12 @@ public class ampacheCommunicator
             }
 
             if (localName.equals("artists")) {
+                artists = Integer.parseInt(contents.toString());
+            }
+            if (localName.equals("albums")) {
+                artists = Integer.parseInt(contents.toString());
+            }
+            if (localName.equals("songs")) {
                 artists = Integer.parseInt(contents.toString());
             }
 

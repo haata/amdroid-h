@@ -6,7 +6,6 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.Context;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Handler;
@@ -21,10 +20,8 @@ import android.widget.TextView;
 import android.widget.ImageView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
+import android.view.Window;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.*;
@@ -37,12 +34,16 @@ public final class collectionActivity extends ListActivity
     public Handler dataReadyHandler;
     private String title;
     private ArrayList<ampacheObject> list = null;
+    private String[] directive;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        /* fancy spinner */
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         //debugging crap
         //Debug.startMethodTracing();
@@ -61,75 +62,120 @@ public final class collectionActivity extends ListActivity
             return;
         }
 
+        // Verify a valid session. The if statement should probably not be there.
+        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null)
+            amdroid.comm.ping();
+
+        // We've tried to login, and failed, so present the user with the preferences pane
+        if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
+            Toast.makeText(this, "Login Failed: " + amdroid.comm.lastErr, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Intent intent = getIntent();
 
-        String[] directive;
         directive = intent.getStringArrayExtra("directive");
         title = intent.getStringExtra("title");
-
-        if (directive == null) {
-            directive = new String[2];
-            directive[0] = "playlists";
-            directive[1] = "";
-            title = "Playlists";
-        }
 
         setTitle(title);
 
         // and be prepared to handle the response
         dataReadyHandler = new Handler() {
-            public void handleMessage(Message msg) {
-                if (msg.what == 0x1336) {
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                    case (0x1336):
+                        /* Handle incremental updates */
+                        list.addAll((ArrayList) msg.obj);
 
+                        /* first inc, hid the dialog and set the adapter */
+                        if (msg.arg1 == 0) {
+                            setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, msg.arg2));
+                            dismissDialog(0);
+                            setProgressBarIndeterminateVisibility(true);
+                        }
+                        
+                        /* queue up the next inc */
+                        if (msg.arg1 < msg.arg2) {
+                            Message requestMsg = new Message();
+                            requestMsg.obj = directive;
+                            requestMsg.what = 0x1336;
+                            requestMsg.arg1 = msg.arg1 + 100;
+                            requestMsg.arg2 = msg.arg2;
+                            requestMsg.replyTo = new Messenger (this);
+                            amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+                        } else {
+                            /* we've completed incremental fetch, cache it baby! */
+                            amdroid.cache.putParcelableArrayList(directive[0], list);
+                            setProgressBarIndeterminateVisibility(false);
+
+                        }
+                        break;
+                    case (0x1337):
+                        /* Handle primary updates */
+                        list = (ArrayList) msg.obj;
+                        setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, list.size()));
+                        dismissDialog(0);
+                        break;
+                    case (0x1338):
+                        /* handle an error */
+                        dismissDialog(0);
+                        Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                        break;
+                    case (0x1339):
+                        /* handle playlist enqueues */
+                        amdroid.playlistCurrent.addAll((ArrayList) msg.obj);
+                        break;
+                    }
                 }
-                if (msg.what == 0x1337) {
-                    list = (ArrayList) msg.obj;
-                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list));
-                    dismissDialog(0);
-                } else if (msg.what == 0x1338) {
-                    dismissDialog(0);
-                    Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
-                } else if (msg.what == 0x1339) {
-                    amdroid.playlistCurrent.addAll((ArrayList) msg.obj);
-                }
-                
-            }
             };
         
         // Are we being 're-created' ?
         list = savedInstanceState != null ? (ArrayList) savedInstanceState.getParcelableArrayList("list") : null;
 
+        // Maybe we have the cache already?
+        if (directive[1].equals("")) { 
+            list = amdroid.cache.getParcelableArrayList(directive[0]); 
+        }
+
         // If not, queue up a data fetch
-        
         if (list == null) {
             //Tell them we're loading
             showDialog(0);
 
             //ampacheRequest req = amdroid.comm.new ampacheRequest(directive[0], directive[1], this);
             Message requestMsg = new Message();
-            
+
+            requestMsg.arg1 = 0;
+            requestMsg.what = 0x1336;
+
+            /* we want incremental pulls for the large ones */
+            if (directive[0].equals("artists")) {
+                list = new ArrayList(amdroid.comm.artists);
+                requestMsg.arg2 = amdroid.comm.artists;
+            } else if (directive[0].equals("albums")) {
+                list = new ArrayList(amdroid.comm.albums);
+                requestMsg.arg2 = amdroid.comm.albums;
+            } else if (directive[0].equals("songs")) {
+                list = new ArrayList(amdroid.comm.songs);
+                requestMsg.arg2 = amdroid.comm.songs;
+            } else {
+                requestMsg.what = 0x1337;
+            }
+
             //tell it what to do
             requestMsg.obj = directive;
-            requestMsg.what = 0x1337;
 
             //tell it how to handle the stuff
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
         } else {
-            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
+            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list, list.size()));
         }
 
         getListView().setTextFilterEnabled(true);
 
     }
 
-    protected void onResume(Bundle bundle) {
-        if (amdroid.confChanged) {
-            amdroid.confChanged = false;
-            setIntent(getIntent());
-        }
-    }
-    
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
         bundle.putParcelableArrayList("list", list);
@@ -153,22 +199,6 @@ public final class collectionActivity extends ListActivity
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        switch (item.getItemId()) {
-        case R.id.prefs:
-            Intent prefsIntent = new Intent().setClass(this, prefsActivity.class);
-            startActivity(prefsIntent);
-            return true;
-        case R.id.playing:
-            Intent playIntent = new Intent().setClass(this, playlistActivity.class);
-            startActivity(playIntent);
-            return true;
-        }
-        return true;
-    }
-
-    @Override
     protected Dialog onCreateDialog(int id) {
         ProgressDialog dialog = new ProgressDialog(this);
         dialog.setMessage("Fetching " + title +"...");
@@ -177,25 +207,29 @@ public final class collectionActivity extends ListActivity
         return dialog;
     }
 
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.collection_menu, menu);
-        return true;
-    }
-
     private class collectionAdapter extends ArrayAdapter
     {
         
         private Context mCtx;
         private int resid;
         private LayoutInflater mInflater;
+        private int size;
 
         
-        public collectionAdapter(Context context, int resid, ArrayList list) {
+        public collectionAdapter(Context context, int resid, ArrayList list, int size) {
             super(context, resid, list);
             this.resid = resid;
+            this.size = size;
             mCtx = context;
             mInflater = LayoutInflater.from(context);
+        }
+
+        public int getCount() {
+            return size;
+        }
+
+        public ampacheObject getItem(int position) {
+            return (position < list.size()) ? list.get(position) : null;
         }
 
         public View getView(int position, View convertView, ViewGroup parent) {
@@ -214,9 +248,13 @@ public final class collectionActivity extends ListActivity
             } else {
                 holder = (bI) convertView.getTag();
             }
-
-            holder.title.setText(cur.toString());
-            holder.add.setOnClickListener( new enqueueListener(mCtx, position, cur));
+            
+            if (cur != null) {
+                holder.title.setText(cur.toString());
+                holder.add.setOnClickListener( new enqueueListener(mCtx, position, cur));
+            } else {
+                holder.title.setText("Loading...");
+            }
             return convertView;
         }
     }
