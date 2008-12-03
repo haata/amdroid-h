@@ -7,10 +7,16 @@
     <application android:label="@string/app_name"
                  android:name="amdroid" 
                  android:icon="@drawable/amdroid_logo">
-        <activity android:name="collectionActivity">
-              <intent-filter>
+        <activity android:name="dashActivity"
+                  android:label="Dashboard" >
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="collectionActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
         <activity android:name="prefsActivity"
