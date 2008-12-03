@@ -273,10 +273,10 @@ public class ampacheCommunicator
                 artists = Integer.parseInt(contents.toString());
             }
             if (localName.equals("albums")) {
-                artists = Integer.parseInt(contents.toString());
+                albums = Integer.parseInt(contents.toString());
             }
             if (localName.equals("songs")) {
-                artists = Integer.parseInt(contents.toString());
+                songs = Integer.parseInt(contents.toString());
             }
 
             if (localName.equals("add")) {
