@@ -31,10 +31,11 @@ import java.lang.Integer;
 public final class collectionActivity extends ListActivity 
 {
 
-    public Handler dataReadyHandler;
+    public dataHandler dataReadyHandler;
     private String title;
     private ArrayList<ampacheObject> list = null;
     private String[] directive;
+    private Boolean isFetching = false;
 
     /** Called when the activity is first created. */
     @Override
@@ -46,8 +47,6 @@ public final class collectionActivity extends ListActivity
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         //debugging crap
-        //Debug.startMethodTracing();
-        //Debug.enableEmulatorTraceOutput();
         //Debug.waitForDebugger();
 
         // Verify a valid session. The if statement should probably not be there.
@@ -80,65 +79,19 @@ public final class collectionActivity extends ListActivity
         setTitle(title);
 
         // and be prepared to handle the response
-        dataReadyHandler = new Handler() {
-                public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                    case (0x1336):
-                        /* Handle incremental updates */
-                        list.addAll((ArrayList) msg.obj);
-
-                        /* first inc, hid the dialog and set the adapter */
-                        if (msg.arg1 == 0) {
-                            setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, msg.arg2));
-                            dismissDialog(0);
-                            setProgressBarIndeterminateVisibility(true);
-                        }
-                        
-                        /* queue up the next inc */
-                        if (msg.arg1 < msg.arg2) {
-                            Message requestMsg = new Message();
-                            requestMsg.obj = directive;
-                            requestMsg.what = 0x1336;
-                            requestMsg.arg1 = msg.arg1 + 100;
-                            requestMsg.arg2 = msg.arg2;
-                            requestMsg.replyTo = new Messenger (this);
-                            amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
-                        } else {
-                            /* we've completed incremental fetch, cache it baby! */
-                            amdroid.cache.putParcelableArrayList(directive[0], list);
-                            setProgressBarIndeterminateVisibility(false);
-
-                        }
-                        break;
-                    case (0x1337):
-                        /* Handle primary updates */
-                        list = (ArrayList) msg.obj;
-                        setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, list.size()));
-                        dismissDialog(0);
-                        break;
-                    case (0x1338):
-                        /* handle an error */
-                        dismissDialog(0);
-                        Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
-                        break;
-                    case (0x1339):
-                        /* handle playlist enqueues */
-                        amdroid.playlistCurrent.addAll((ArrayList) msg.obj);
-                        break;
-                    }
-                }
-            };
+        dataReadyHandler = new dataHandler();
         
         // Are we being 're-created' ?
         list = savedInstanceState != null ? (ArrayList) savedInstanceState.getParcelableArrayList("list") : null;
 
         // Maybe we have the cache already?
-        if (directive[1].equals("")) { 
+        if (amdroid.cache.containsKey(directive[0])) { 
             list = amdroid.cache.getParcelableArrayList(directive[0]); 
         }
 
         // If not, queue up a data fetch
         if (list == null) {
+            isFetching = true;
             //Tell them we're loading
             showDialog(0);
 
@@ -178,9 +131,17 @@ public final class collectionActivity extends ListActivity
 
     protected void onSaveInstanceState(Bundle bundle) {
         super.onSaveInstanceState(bundle);
-        bundle.putParcelableArrayList("list", list);
+        if (!isFetching) {
+            bundle.putParcelableArrayList("list", list);
+        }
     }
 
+    public void onDestroy() {
+        super.onDestroy();
+        dataReadyHandler.removeMessages(0x1336);
+        dataReadyHandler.removeMessages(0x1337);
+        dataReadyHandler.stop = true;
+    }
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
@@ -205,6 +166,61 @@ public final class collectionActivity extends ListActivity
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
         return dialog;
+    }
+
+    private class dataHandler extends Handler {
+
+        public Boolean stop = false;
+
+        public void handleMessage(Message msg) {
+            if (stop)
+                return;
+            switch (msg.what) {
+            case (0x1336):
+                /* Handle incremental updates */
+                list.addAll((ArrayList) msg.obj);
+                
+                /* first inc, hid the dialog and set the adapter */
+                if (msg.arg1 == 0) {
+                    setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, msg.arg2));
+                    dismissDialog(0);
+                    setProgressBarIndeterminateVisibility(true);
+                }
+               
+                /* queue up the next inc */
+                if (msg.arg1 < msg.arg2) {
+                    Message requestMsg = new Message();
+                    requestMsg.obj = directive;
+                    requestMsg.what = 0x1336;
+                    requestMsg.arg1 = msg.arg1 + 100;
+                    requestMsg.arg2 = msg.arg2;
+                    requestMsg.replyTo = new Messenger (this);
+                    amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+                } else {
+                    /* we've completed incremental fetch, cache it baby! */
+                    amdroid.cache.putParcelableArrayList(directive[0], list);
+                    setProgressBarIndeterminateVisibility(false);
+                    isFetching = false;
+                }
+                break;
+            case (0x1337):
+                /* Handle primary updates */
+                list = (ArrayList) msg.obj;
+                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list, list.size()));
+                dismissDialog(0);
+                isFetching = false;
+                break;
+            case (0x1338):
+                /* handle an error */
+                dismissDialog(0);
+                Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                break;
+            case (0x1339):
+                /* handle playlist enqueues */
+                amdroid.playlistCurrent.addAll((ArrayList) msg.obj);
+                break;
+            }
+        }
     }
 
     private class collectionAdapter extends ArrayAdapter

@@ -39,6 +39,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     private ListView lv;
 
     private playlistAdapter pla;
+    private Boolean prepared = true;
 
     public void onCreate(Bundle savedInstanceState)
     {
@@ -62,6 +63,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
                     if (amdroid.playListVisible) {
                         mc.show();
                         mc.setEnabled(true);
+                        prepared = true;
                     }
                 }});
 
@@ -212,7 +214,8 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         try {
             amdroid.mp.setDataSource(chosen.liveUrl());
             amdroid.mp.prepareAsync();
-        } catch (java.io.IOException blah) {
+            prepared = false;
+        } catch (Exception blah) {
             return;
         }
         turnOnPlayingView();
@@ -246,9 +249,11 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     public void onItemClick(AdapterView l, View v, int position, long id) {
-        turnOffPlayingView();
-        amdroid.playingIndex = position;
-        play();
+        if (prepared) {
+            turnOffPlayingView();
+            amdroid.playingIndex = position;
+            play();
+        }
     }
 
     /* our child classes */

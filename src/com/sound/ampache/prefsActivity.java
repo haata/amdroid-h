@@ -17,7 +17,7 @@ public class prefsActivity extends PreferenceActivity {
         addPreferencesFromResource(R.xml.preferences);
     }
 
-    protected void onDestroy(Bundle savedInstanceState) {
+    protected void onDestroy() {
         /* we want to tell other activities that we need to reload */
         super.onDestroy();
         amdroid.confChanged = true;
