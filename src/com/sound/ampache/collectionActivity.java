@@ -32,6 +32,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
 import android.preference.PreferenceManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 import android.widget.BaseAdapter;
 import android.widget.ArrayAdapter;
@@ -48,7 +50,7 @@ import java.io.*;
 import com.sound.ampache.objects.*;
 import java.lang.Integer;
 
-public final class collectionActivity extends ListActivity 
+public final class collectionActivity extends ListActivity implements OnItemLongClickListener 
 {
 
     public dataHandler dataReadyHandler;
@@ -65,6 +67,7 @@ public final class collectionActivity extends ListActivity
 
         /* fancy spinner */
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_PROGRESS);
         
         //debugging crap
         //Debug.waitForDebugger();
@@ -103,7 +106,7 @@ public final class collectionActivity extends ListActivity
             list = td.list;
             dataReadyHandler.ca = new collectionAdapter(this, R.layout.browsable_item, list);
             setListAdapter(dataReadyHandler.ca);
-            setProgressBarIndeterminateVisibility(true);
+            setProgressBarVisibility(true);
             return;
         }
         // and be prepared to handle the response
@@ -121,7 +124,6 @@ public final class collectionActivity extends ListActivity
         if (list == null) {
             isFetching = true;
             //Tell them we're loading
-            showDialog(0);
 
             //ampacheRequest req = amdroid.comm.new ampacheRequest(directive[0], directive[1], this);
             Message requestMsg = new Message();
@@ -131,17 +133,22 @@ public final class collectionActivity extends ListActivity
 
             /* we want incremental pulls for the large ones */
             if (directive[0].equals("artists")) {
+                setProgressBarVisibility(true);
                 list = new ArrayList(amdroid.comm.artists);
                 requestMsg.arg2 = amdroid.comm.artists;
             } else if (directive[0].equals("albums")) {
+                setProgressBarVisibility(true);
                 list = new ArrayList(amdroid.comm.albums);
                 requestMsg.arg2 = amdroid.comm.albums;
             } else if (directive[0].equals("songs")) {
+                setProgressBarVisibility(true);
                 list = new ArrayList(amdroid.comm.songs);
                 requestMsg.arg2 = amdroid.comm.songs;
             } else {
+                list = new ArrayList();
                 requestMsg.what = 0x1337;
                 getListView().setTextFilterEnabled(true);
+                setProgressBarIndeterminateVisibility(true);
             }
 
             //tell it what to do
@@ -150,11 +157,14 @@ public final class collectionActivity extends ListActivity
             //tell it how to handle the stuff
             requestMsg.replyTo = new Messenger (this.dataReadyHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+            dataReadyHandler.ca = new collectionAdapter(this, R.layout.browsable_item, list);
+            setListAdapter(dataReadyHandler.ca);
         } else {
             setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
             getListView().setTextFilterEnabled(true);
         }
-
+        getListView().setOnItemLongClickListener(this);
+        getListView().setEmptyView(findViewById(R.id.loading));
     }
 
     public Object onRetainNonConfigurationInstance() {
@@ -184,6 +194,22 @@ public final class collectionActivity extends ListActivity
         }
     }
 
+    public boolean onItemLongClick(AdapterView l, View v, int position, long id) {
+        ampacheObject cur = (ampacheObject) l.getItemAtPosition(position);
+        Toast.makeText(this, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_LONG).show();
+        if (cur.hasChildren()) {
+            Message requestMsg = new Message();
+            requestMsg.obj = cur.allChildren();
+            requestMsg.what = 0x1339;
+            //tell it how to handle the stuff
+            requestMsg.replyTo = new Messenger(dataReadyHandler);
+            amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
+        } else {
+            amdroid.playlistCurrent.add((Song) cur);
+        }
+        return true;
+    }
+
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
         if (val == null)
@@ -198,15 +224,6 @@ public final class collectionActivity extends ListActivity
             intent = intent.putExtra("directive", dir).putExtra("title", val.getType() + ": " + val.toString());
         }
         startActivity(intent);
-    }
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        ProgressDialog dialog = new ProgressDialog(this);
-        dialog.setMessage("Fetching " + title +"...");
-        dialog.setIndeterminate(true);
-        dialog.setCancelable(false);
-        return dialog;
     }
 
     private class tidbits {
@@ -228,14 +245,6 @@ public final class collectionActivity extends ListActivity
                 /* Handle incremental updates */
                 list.addAll((ArrayList) msg.obj);
                 
-                /* first inc, hid the dialog and set the adapter */
-                if (msg.arg1 == 0) {
-                    ca = new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list);
-                    setListAdapter(ca);
-                    dismissDialog(0);
-                    collectionActivity.this.setProgressBarIndeterminateVisibility(true);
-                }
-               
                 /* queue up the next inc */
                 if (msg.arg1 < msg.arg2) {
                     Message requestMsg = new Message();
@@ -246,26 +255,28 @@ public final class collectionActivity extends ListActivity
                     requestMsg.replyTo = new Messenger (this);
                     amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
                     ca.notifyDataSetChanged();
+                    collectionActivity.this.setProgress((10000 * msg.arg1) / msg.arg2);
                 } else {
                     /* we've completed incremental fetch, cache it baby! */
                     ca.notifyDataSetChanged();
                     amdroid.cache.putParcelableArrayList(directive[0], list);
-                    setProgressBarIndeterminateVisibility(false);
+                    collectionActivity.this.setProgress(10000);
                     getListView().setTextFilterEnabled(true);
                     isFetching = false;
                 }
                 break;
             case (0x1337):
                 /* Handle primary updates */
-                list = (ArrayList) msg.obj;
-                setListAdapter(new collectionAdapter(collectionActivity.this, R.layout.browsable_item, list));
-                dismissDialog(0);
+                list.addAll((ArrayList) msg.obj);
+                setProgressBarIndeterminateVisibility(false);
+                ca.notifyDataSetChanged();
                 isFetching = false;
                 break;
             case (0x1338):
                 /* handle an error */
-                dismissDialog(0);
+                setProgressBarIndeterminateVisibility(false);
                 Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                isFetching = false;
                 break;
             case (0x1339):
                 /* handle playlist enqueues */
@@ -299,8 +310,7 @@ public final class collectionActivity extends ListActivity
                 holder = new bI();
 
                 holder.title = (TextView) convertView.findViewById(R.id.title);
-                holder.add = (ImageView) convertView.findViewById(R.id.add);
-                holder.eq = new enqueueListener(mCtx);
+                holder.other = (TextView) convertView.findViewById(R.id.other);
 
                 convertView.setTag(holder);
             } else {
@@ -309,44 +319,14 @@ public final class collectionActivity extends ListActivity
             
             if (cur != null) {
                 holder.title.setText(cur.toString());
-                holder.eq.update(cur);
-                holder.add.setOnClickListener(holder.eq);
+                holder.other.setText(cur.extraString());
             }
             return convertView;
         }
     }
 
-    private class enqueueListener implements View.OnClickListener
-    {
-        Context mCtx;
-        ampacheObject cur;
-
-        public enqueueListener(Context context) {
-            mCtx = context;
-        }
-
-        public void update (ampacheObject cur) {
-            this.cur = cur;
-        }
-
-        public void onClick(View v) {
-            Toast.makeText(mCtx, "Enqueue " + cur.getType() + ": " + cur.toString(), Toast.LENGTH_SHORT).show();
-            if (cur.hasChildren()) {
-                Message requestMsg = new Message();
-                requestMsg.obj = cur.allChildren();
-                requestMsg.what = 0x1339;
-                //tell it how to handle the stuff
-                requestMsg.replyTo = new Messenger (collectionActivity.this.dataReadyHandler);
-                amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
-            } else {
-                amdroid.playlistCurrent.add((Song) cur);
-            }
-        }
-    }
-    
     static class bI {
         TextView title;
-        ImageView add;
-        enqueueListener eq;
+        TextView other;
     }
 }

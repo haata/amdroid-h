@@ -36,6 +36,8 @@ public abstract class ampacheObject implements Parcelable {
         return name;
     }
 
+    abstract public String extraString();
+
     abstract public String getType();
 
     abstract public String childString();

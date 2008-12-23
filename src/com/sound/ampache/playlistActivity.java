@@ -346,7 +346,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             }
 
             holder.title.setText(cur.name);
-            holder.other.setText(cur.artist + " - " + cur.album);
+            holder.other.setText(cur.extraString());
             if (amdroid.mp.isPlaying() && amdroid.playingIndex == position) {
                 holder.art.setVisibility(View.VISIBLE);
             } else {

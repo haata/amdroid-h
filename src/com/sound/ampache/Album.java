@@ -25,8 +25,19 @@ import android.os.Parcelable;
 import android.os.Parcel;
 
 public class Album extends ampacheObject {
+    public String artist = "";
+    public String tracks = "";
+    public String extra = null;
+
     public String getType() {
         return "Album";
+    }
+
+    public String extraString() {
+        if (extra == null) {
+            extra = artist + " - " + tracks + " tracks";
+        }
+        return extra;
     }
 
     public String childString() {
@@ -45,8 +56,16 @@ public class Album extends ampacheObject {
     public Album() {
     }
 
+    public void writeToParcel(Parcel out, int flags) {
+        super.writeToParcel(out, flags);
+        out.writeString(artist);
+        out.writeString(tracks);
+    }
+
     public Album(Parcel in) {
         super.readFromParcel(in);
+        artist = in.readString();
+        tracks = in.readString();
     }
 
     public static final Parcelable.Creator CREATOR

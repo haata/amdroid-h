@@ -8,6 +8,10 @@ public class Genre extends ampacheObject {
         return "Genre";
     }
 
+    public String extraString() {
+        return "";
+    }
+
     public boolean hasChildren() {
         return true;
     }

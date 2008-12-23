@@ -25,10 +25,21 @@ import android.os.Parcelable;
 import android.os.Parcel;
 
 public class Playlist extends ampacheObject {
+    public String owner = "";
+    public String count = "";
+    public String extra = null;
+
     public String getType() {
         return "Playlist";
     }
     
+    public String extraString() {
+        if (extra == null) {
+            extra = owner + " - " + count;
+        }
+        return extra;
+    }
+
     public boolean hasChildren() {
         return true;
     }
@@ -45,8 +56,18 @@ public class Playlist extends ampacheObject {
     public Playlist() {
     }
 
+    public void writeToParcel(Parcel out, int flags) {
+        super.writeToParcel(out, flags);
+        out.writeString(owner);
+        out.writeString(count);
+        out.writeString(extra);
+    }
+
     public Playlist(Parcel in) {
         super.readFromParcel(in);
+        owner = in.readString();
+        count = in.readString();
+        extra = in.readString();
     }
 
     public static final Parcelable.Creator CREATOR

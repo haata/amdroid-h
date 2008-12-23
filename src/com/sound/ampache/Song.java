@@ -35,9 +35,18 @@ public class Song extends ampacheObject implements Externalizable {
     public String url = "";
     public String album = "";
     public String genre = "";
+    public String extra = null;
 
     public String getType() {
         return "Song";
+    }
+
+    public String extraString() {
+        if (extra == null) {
+            extra = artist + " - " + album;
+        }
+
+        return extra;
     }
 
     public String childString() {
@@ -67,6 +76,7 @@ public class Song extends ampacheObject implements Externalizable {
         out.writeString(url);
         out.writeString(album);
         out.writeString(genre);
+        out.writeString(extra);
     }
 
     public Song(Parcel in) {
@@ -76,6 +86,7 @@ public class Song extends ampacheObject implements Externalizable {
         url = in.readString();
         album = in.readString();
         genre = in.readString();
+        extra = in.readString();
     }
 
     public static final Parcelable.Creator CREATOR

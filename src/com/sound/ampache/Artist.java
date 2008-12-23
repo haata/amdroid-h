@@ -25,8 +25,14 @@ import android.os.Parcelable;
 import android.os.Parcel;
 
 public class Artist extends ampacheObject {
+    public String albums = "";
+
     public boolean hasChildren() {
         return true;
+    }
+    
+    public String extraString() {
+        return albums;
     }
     
     public String getType() {
@@ -45,8 +51,14 @@ public class Artist extends ampacheObject {
     public Artist() {
     }
 
+    public void writeToParcel(Parcel out, int flags) {
+        super.writeToParcel(out, flags);
+        out.writeString(albums);
+    }
+
     public Artist(Parcel in) {
         super.readFromParcel(in);
+        albums = in.readString();
     }
 
     public static final Parcelable.Creator CREATOR

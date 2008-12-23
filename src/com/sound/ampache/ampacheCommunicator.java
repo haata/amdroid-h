@@ -347,6 +347,10 @@ public class ampacheCommunicator
                 current.name = contents.toString();
             }
 
+            if (localName.equals("albums")) {
+                current.albums = contents.toString() + " albums";
+            }
+
             if (localName.equals("artist")) {
                 data.add(current);
             }
@@ -379,6 +383,15 @@ public class ampacheCommunicator
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
+            
+            if (localName.equals("artist")) {
+                current.artist = contents.toString();
+            }
+
+            if (localName.equals("tracks")) {
+                current.tracks = contents.toString();
+            }
+
             if (localName.equals("album")) {
                 data.add(current);
             }
@@ -441,6 +454,15 @@ public class ampacheCommunicator
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
+            
+            if (localName.equals("owner")) {
+                current.owner = contents.toString();
+            }
+
+            if (localName.equals("items")) {
+                current.count = contents.toString();
+            }
+            
             if (localName.equals("playlist")) {
                 data.add(current);
             }
