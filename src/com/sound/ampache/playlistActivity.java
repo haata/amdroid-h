@@ -33,14 +33,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.ImageView;
-import android.widget.TableLayout;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.MediaController;
-import android.widget.MediaController.MediaPlayerControl;
+import com.sound.ampache.staticMedia.MediaPlayerControl;
 import com.sound.ampache.objects.Song;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -54,7 +53,7 @@ import java.util.ArrayList;
 
 public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
 {
-    private MediaController mc;
+    private staticMedia mc;
     private ListView lv;
 
     private playlistAdapter pla;
@@ -64,36 +63,33 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     {
         super.onCreate(savedInstanceState);
         
-        setContentView(R.layout.playlist);
-
         /* make sure we're authenticated */
         amdroid.comm.ping();
 
         amdroid.mp.setOnBufferingUpdateListener(this);
         amdroid.mp.setOnCompletionListener(this);
-        TextView menuText = (TextView) findViewById(R.id.menutext);
-        mc = new MediaController(this, false);
+        mc = new staticMedia(this);
      
-        menuText.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    mc.show();
-                }});
-
         amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 public void onPrepared(MediaPlayer mp) {
                     amdroid.mp.start();
                     if (amdroid.playListVisible) {
-                        mc.show();
                         mc.setEnabled(true);
+                        mc.show();
                         prepared = true;
                     }
                 }});
 
+        mc.setPrevNextListeners(new nextList(), new prevList());
+
+        // Set up our view :D
+        LayoutInflater inflate = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LinearLayout v = (LinearLayout) inflate.inflate(R.layout.playlist, null);
+        v.addView(mc.getController());
+        setContentView(v);
+
         lv = (ListView) findViewById(R.id.list);
         lv.setOnItemClickListener(this);
-
-        mc.setAnchorView(menuText);
-        mc.setPrevNextListeners(new nextList(), new prevList());
 
         if (amdroid.mp.isPlaying()) {
             mc.setEnabled(true);
