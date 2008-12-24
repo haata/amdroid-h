@@ -91,15 +91,18 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         lv = (ListView) findViewById(R.id.list);
         lv.setOnItemClickListener(this);
 
+        pla = new playlistAdapter(this);
+        lv.setAdapter(pla);
+
+        mc.setMediaPlayer(this);
+
         if (amdroid.mp.isPlaying()) {
             mc.setEnabled(true);
+            mc.show();
         } else {
             mc.setEnabled(false);
         }
 
-        mc.setMediaPlayer(this);
-        pla = new playlistAdapter(this);
-        lv.setAdapter(pla);
 
     }
 
