@@ -27,15 +27,20 @@ import android.widget.Button;
 import android.widget.Toast;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.content.Intent;
 
 public class dashActivity extends Activity implements OnClickListener {
+    private static final int SEARCH_MUSIC = 100;
+    private static final int SETTINGS = 101;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.dash);
-
+	setContentView(R.layout.dash);
+	
         /* We need a listener for all of the buttons */
         
         Button temp;
@@ -47,10 +52,8 @@ public class dashActivity extends Activity implements OnClickListener {
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.playlists);
         temp.setOnClickListener(this);
-        temp = (Button) findViewById(R.id.player);
-        temp.setOnClickListener(this);
-        temp = (Button) findViewById(R.id.settings);
-        temp.setOnClickListener(this); 
+
+        findViewById(R.id.nowplaying).setOnClickListener(this);
         
         /* Verify a valid session */
         amdroid.comm.ping();
@@ -66,6 +69,14 @@ public class dashActivity extends Activity implements OnClickListener {
 
     }
     
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+	super.onCreateOptionsMenu(menu);
+	menu.add(0, SETTINGS, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences);
+	menu.add(0, SEARCH_MUSIC, 0, "Search Music").setIcon(android.R.drawable.ic_menu_search);
+	return true;
+    }
+
     public void onClick(View v) {
         Intent intent = null;
         String[] dir = new String[2];
@@ -92,17 +103,36 @@ public class dashActivity extends Activity implements OnClickListener {
             intent = new Intent().setClass(this, collectionActivity.class).putExtra("directive", dir).putExtra("title", "Playlists");
             break;
 
-        case (R.id.player):
+        case (R.id.nowplaying):
             intent = new Intent().setClass(this, playlistActivity.class);
             break;
 
-        case (R.id.settings):
-            intent = new Intent().setClass(this, prefsActivity.class);
-            break;
-
         default:
+	    return;
         }
         startActivity(intent);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+	Intent intent = null;
+	try {
+	    switch (item.getItemId()) {
+	    case SETTINGS:
+		intent = new Intent().setClass(this, prefsActivity.class);
+		break;
+
+	    case SEARCH_MUSIC:
+		intent = new Intent().setClass(this, playlistActivity.class);
+		break;
+
+	    default:
+		return false;
+	    }
+	} catch (Exception poo) {
+	}
+	startActivity(intent);
+	return true;
+    }
+    
 }
