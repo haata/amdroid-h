@@ -53,10 +53,11 @@ public class dashActivity extends Activity implements OnClickListener {
         temp = (Button) findViewById(R.id.playlists);
         temp.setOnClickListener(this);
 
+	//If they tap the "Now Playing" section, take them to the playlist.
         findViewById(R.id.nowplaying).setOnClickListener(this);
         
         /* Verify a valid session */
-        amdroid.comm.ping();
+        //amdroid.comm.ping();
 
         /*  We've tried to login, and failed, so present the user with the preferences pane */
         if (amdroid.comm.authToken.equals("") || amdroid.comm.authToken == null) {
@@ -65,7 +66,6 @@ public class dashActivity extends Activity implements OnClickListener {
             startActivity(prefsIntent);
             return;
         }
-
 
     }
     
