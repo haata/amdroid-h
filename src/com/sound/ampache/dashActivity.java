@@ -48,7 +48,7 @@ public class dashActivity extends Activity implements OnClickListener {
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.albums);
         temp.setOnClickListener(this);
-        temp = (Button) findViewById(R.id.songs);
+        temp = (Button) findViewById(R.id.tags);
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.playlists);
         temp.setOnClickListener(this);
@@ -93,9 +93,9 @@ public class dashActivity extends Activity implements OnClickListener {
             intent = new Intent().setClass(this, collectionActivity.class).putExtra("directive", dir).putExtra("title", "Albums");
             break;
 
-        case (R.id.songs):
-            dir[0] = "songs";
-            intent = new Intent().setClass(this, collectionActivity.class).putExtra("directive", dir).putExtra("title", "Songs");
+        case (R.id.tags):
+            dir[0] = "tags";
+            intent = new Intent().setClass(this, collectionActivity.class).putExtra("directive", dir).putExtra("title", "Tags");
             break;
 
         case (R.id.playlists):

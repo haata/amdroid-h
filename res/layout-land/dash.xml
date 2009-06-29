@@ -30,8 +30,8 @@
 	    android:layout_marginBottom="35dip"
 	    android:ellipsize="marquee" />
     
-    <Button android:text="Songs"
-            android:id="@+id/songs" 
+    <Button android:text="Tags"
+            android:id="@+id/tags" 
             android:layout_height="110dip"
             android:layout_width="110dip" 
             android:textSize="25dip"
@@ -93,7 +93,7 @@
 		 android:layout_width="wrap_content"
 		 android:layout_height="wrap_content"
 		 android:layout_gravity="center_vertical"
-		 android:background="@android:drawable/ic_media_play"/>
+		 android:background="@android:drawable/ic_media_pause"/>
     </LinearLayout>    
   </LinearLayout>
 </LinearLayout>

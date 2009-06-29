@@ -1,6 +1,6 @@
 package com.sound.ampache;
 
-/* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+/* Copyright (c) 2008-2009 Kevin James Purdy <purdyk@gmail.com>
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |

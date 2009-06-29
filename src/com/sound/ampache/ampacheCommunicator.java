@@ -166,17 +166,20 @@ public class ampacheCommunicator
                         } else if (directive[0].equals("playlist_songs")) {
                             append += "&filter=" + directive[1];
                             hand = new ampacheSongParser();
-                        } else if (directive[0].equals("genre_artists")) {
+                        } else if (directive[0].equals("tag_artists")) {
                             append += "&filter=" + directive[1];
                             hand = new ampacheArtistParser();
-                        } else if (directive[0].equals("genres")) {
-                            hand = new ampacheGenreParser();
                         } else if (directive[0].equals("albums")) {
                             hand = new ampacheAlbumParser();
                         } else if (directive[0].equals("playlists")) {
                             hand = new ampachePlaylistParser();
                         } else if (directive[0].equals("songs")) {
                             hand = new ampacheSongParser();
+			} else if (directive[0].equals("tags")) {
+			    hand = new ampacheTagParser();
+			} else if (directive[0].equals("search_songs")) {
+			    hand = new ampacheSongParser();
+			    append += "&filter=tool";
                         } else {
                             return; // new ArrayList();
                         }
@@ -398,8 +401,8 @@ public class ampacheCommunicator
         }
     }
     
-    private class ampacheGenreParser extends dataHandler {
-        private Genre current;
+    private class ampacheTagParser extends dataHandler {
+        private Tag current;
         
         public void startElement( String namespaceURI,
                                   String localName,
@@ -408,8 +411,8 @@ public class ampacheCommunicator
             
             super.startElement(namespaceURI, localName, qName, attr);
 
-            if (localName.equals("genre")) {
-                current = new Genre();
+            if (localName.equals("tag")) {
+                current = new Tag();
                 current.id = attr.getValue("id");
             }
         }
@@ -423,7 +426,13 @@ public class ampacheCommunicator
             if (localName.equals("name")) {
                 current.name = contents.toString();
             }
-            if (localName.equals("genre")) {
+	    if (localName.equals("albums")) {
+		current.albums = contents.toString();
+	    }
+	    if (localName.equals("artists")){
+		current.artists = contents.toString();
+	    }
+            if (localName.equals("tag")) {
                 data.add(current);
             }
         }
