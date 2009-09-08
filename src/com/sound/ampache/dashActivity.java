@@ -42,7 +42,6 @@ public class dashActivity extends Activity implements OnClickListener {
 	setContentView(R.layout.dash);
 	
         /* We need a listener for all of the buttons */
-        
         Button temp;
         temp = (Button) findViewById(R.id.artists);
         temp.setOnClickListener(this);
@@ -52,8 +51,8 @@ public class dashActivity extends Activity implements OnClickListener {
         temp.setOnClickListener(this);
         temp = (Button) findViewById(R.id.playlists);
         temp.setOnClickListener(this);
-
-	//If they tap the "Now Playing" section, take them to the playlist.
+        
+        //If they tap the "Now Playing" section, take them to the playlist.
         findViewById(R.id.nowplaying).setOnClickListener(this);
         
         /* Verify a valid session */
