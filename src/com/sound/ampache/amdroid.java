@@ -47,7 +47,7 @@ public final class amdroid extends Application {
     public static Boolean playListVisible;
     public static Boolean confChanged;
     protected static Bundle cache;
-    private static Boolean mResumeAfterCall;
+    private static Boolean mResumeAfterCall = false;
 
     //Handle phone calls
     private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
@@ -88,8 +88,8 @@ public final class amdroid extends Application {
         cache = new Bundle();
         
         //Make sure we check for phone calls
-        //TelephonyManager tmgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        //tmgr.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        TelephonyManager tmgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        tmgr.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
         try {
             comm = new ampacheCommunicator(prefs, this);
@@ -100,5 +100,10 @@ public final class amdroid extends Application {
             
         }
         playlistCurrent = new ArrayList();
+    }
+
+    public void onDestroy() {
+        TelephonyManager tmgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        tmgr.listen(mPhoneStateListener, 0);
     }
 }
