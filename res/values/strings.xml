@@ -13,4 +13,5 @@
     <string name="title_password_preference">Ampache Password</string>
     <string name="summary_password_preference"></string>
     <string name="dialog_password_preference">password</string>
+    <string name="search_label">Songs</string>
 </resources>

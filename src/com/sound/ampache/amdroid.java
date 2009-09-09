@@ -30,6 +30,10 @@ import com.sound.ampache.objects.*;
 import android.os.Debug;
 import android.os.Bundle;
 import android.media.MediaPlayer;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
+import android.media.AudioManager;
+import android.content.Context;
 
 public final class amdroid extends Application {
 
@@ -43,6 +47,34 @@ public final class amdroid extends Application {
     public static Boolean playListVisible;
     public static Boolean confChanged;
     protected static Bundle cache;
+    private static Boolean mResumeAfterCall;
+
+    //Handle phone calls
+    private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
+            @Override
+            public void onCallStateChanged(int state, String incomingNumber) {
+                if (state == TelephonyManager.CALL_STATE_RINGING) {
+                    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    int ringvolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+                    if (ringvolume > 0) {
+                        mResumeAfterCall = (mp.isPlaying() || mResumeAfterCall);
+                        mp.pause();
+                    }
+                } else if (state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                    // pause the music while a conversation is in progress
+                    mResumeAfterCall = (mp.isPlaying() || mResumeAfterCall);
+                    mp.pause();
+                } else if (state == TelephonyManager.CALL_STATE_IDLE) {
+                    // start playing again
+                    if (mResumeAfterCall) {
+                        // resume playback only if music was playing
+                        // when the call was answered
+                        mp.start();
+                        mResumeAfterCall = false;
+                    }
+                }
+            }
+        };
 
     public void onCreate() {
         //Debug.waitForDebugger();
@@ -54,6 +86,10 @@ public final class amdroid extends Application {
         bufferPC = 0;
 
         cache = new Bundle();
+        
+        //Make sure we check for phone calls
+        //TelephonyManager tmgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        //tmgr.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
 
         try {
             comm = new ampacheCommunicator(prefs, this);
@@ -65,5 +101,4 @@ public final class amdroid extends Application {
         }
         playlistCurrent = new ArrayList();
     }
-
 }

@@ -175,11 +175,11 @@ public class ampacheCommunicator
                             hand = new ampachePlaylistParser();
                         } else if (directive[0].equals("songs")) {
                             hand = new ampacheSongParser();
-			} else if (directive[0].equals("tags")) {
-			    hand = new ampacheTagParser();
-			} else if (directive[0].equals("search_songs")) {
-			    hand = new ampacheSongParser();
-			    append += "&filter=tool";
+                        } else if (directive[0].equals("tags")) {
+                            hand = new ampacheTagParser();
+                        } else if (directive[0].equals("search_songs")) {
+                            hand = new ampacheSongParser();
+                            append += "&filter=" + directive[1];
                         } else {
                             return; // new ArrayList();
                         }

@@ -1,36 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.sound.ampache"
-      android:versionCode="1"
-      android:versionName="0.8.5" >
-      <uses-sdk android:minSdkVersion="1" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <application android:label="@string/app_name"
-                 android:name="amdroid" 
-                 android:icon="@drawable/amdroid_logo">
-        <activity android:name="dashActivity" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name="collectionActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-            </intent-filter>
-        </activity>
-        <activity android:name="prefsActivity"
-                  android:label="@string/prefs_name">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="andriod.intent.category.PREFERENCE" />
-            </intent-filter>
-        </activity>
-        <activity android:name="playlistActivity"
-                  android:label="@string/play_name">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-            </intent-filter>
-        </activity>
-    </application>
+          package="com.sound.ampache"
+          android:versionCode="2"
+          android:versionName="0.9.0" >
+  <uses-sdk android:minSdkVersion="1" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+  <application android:label="@string/app_name"
+               android:name="amdroid" 
+               android:icon="@drawable/amdroid_logo">
+    <!-- Dashboard -->
+    <activity android:name="dashActivity" >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <meta-data android:name="android.app.default_searchable" android:value=".songSearch" />
+    </activity>
+    <!-- Collection Browser -->
+    <activity android:name="collectionActivity">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+      </intent-filter>
+      <meta-data android:name="android.app.default_searchable" android:value=".songSearch" />
+    </activity>
+    <!-- Preferences -->
+    <activity android:name="prefsActivity"
+              android:label="@string/prefs_name">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="andriod.intent.category.PREFERENCE" />
+      </intent-filter>
+    </activity>
+    <!-- Playlist Activity -->
+    <activity android:name="playlistActivity"
+              android:label="@string/play_name">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+      </intent-filter>
+    </activity>
+    <!-- Search Activity -->
+    <activity android:name="songSearch" 
+              android:launchMode="singleTop">
+      <intent-filter>
+        <action android:name="android.intent.action.SEARCH" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+      <meta-data android:name="android.app.searchable" 
+                 android:resource="@xml/searchable" />
+    </activity>
+  </application>
 </manifest> 

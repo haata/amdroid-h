@@ -275,7 +275,7 @@ public final class collectionActivity extends ListActivity implements OnItemLong
             case (0x1338):
                 /* handle an error */
                 setProgressBarIndeterminateVisibility(false);
-                Toast.makeText(collectionActivity.this, "Error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
+                Toast.makeText(collectionActivity.this, "Communicator error:" + (String) msg.obj, Toast.LENGTH_LONG).show();
                 isFetching = false;
                 break;
             case (0x1339):
@@ -284,49 +284,5 @@ public final class collectionActivity extends ListActivity implements OnItemLong
                 break;
             }
         }
-    }
-
-    private class collectionAdapter extends ArrayAdapter
-    {
-        
-        private Context mCtx;
-        private int resid;
-        private LayoutInflater mInflater;
-        
-        public collectionAdapter(Context context, int resid, ArrayList list) {
-            super(context, resid, list);
-            this.resid = resid;
-            mCtx = context;
-            mInflater = LayoutInflater.from(context);
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            bI holder;
-            ampacheObject cur = (ampacheObject) getItem(position);
-
-            /* we don't reuse */
-            if (convertView == null) {
-                convertView = mInflater.inflate(resid, null);
-                holder = new bI();
-
-                holder.title = (TextView) convertView.findViewById(R.id.title);
-                holder.other = (TextView) convertView.findViewById(R.id.other);
-
-                convertView.setTag(holder);
-            } else {
-                holder = (bI) convertView.getTag();
-            }
-            
-            if (cur != null) {
-                holder.title.setText(cur.toString());
-                holder.other.setText(cur.extraString());
-            }
-            return convertView;
-        }
-    }
-
-    static class bI {
-        TextView title;
-        TextView other;
     }
 }
