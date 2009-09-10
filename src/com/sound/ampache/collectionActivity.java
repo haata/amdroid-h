@@ -147,7 +147,6 @@ public final class collectionActivity extends ListActivity implements OnItemLong
             } else {
                 list = new ArrayList();
                 requestMsg.what = 0x1337;
-                getListView().setTextFilterEnabled(true);
                 setProgressBarIndeterminateVisibility(true);
             }
 
@@ -161,8 +160,14 @@ public final class collectionActivity extends ListActivity implements OnItemLong
             setListAdapter(dataReadyHandler.ca);
         } else {
             setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
-            getListView().setTextFilterEnabled(true);
         }
+
+	// Text Filter
+	getListView().setTextFilterEnabled(true);
+
+	// Fast Scroll
+	getListView().setFastScrollEnabled(true);
+
         getListView().setOnItemLongClickListener(this);
         getListView().setEmptyView(findViewById(R.id.loading));
     }
