@@ -50,6 +50,7 @@ import java.io.FileInputStream;
 import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Random;
 
 public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
 {
@@ -106,6 +107,73 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     }
 
+    // List for keeping track of Shuffle/Random
+    private ArrayList shuffleHistory = new ArrayList();
+
+    private boolean shuffleEnabled = false;
+    private boolean  repeatEnabled = false;
+
+    private void nextInPlaylist() {
+        if ( shuffleEnabled ) {
+            // So we don't play a song more than once
+            if ( !shuffleHistory.contains( amdroid.playingIndex ) )
+                shuffleHistory.add( amdroid.playingIndex );
+
+            // Just played the last song, repeat if repeat is enabled, stop otherwise
+            if ( shuffleHistory.size() >= amdroid.playlistCurrent.size() && repeatEnabled )
+                shuffleHistory.clear();
+            else
+		amdroid.playingIndex = amdroid.playlistCurrent.size();
+
+            int next = 0;
+            Random rand = new Random();
+
+            // Try random numbers until finding one that is not used
+            do {
+                next = rand.nextInt( amdroid.playlistCurrent.size() );
+            } while ( shuffleHistory.contains( next ) );
+
+            // Set next playing index
+            amdroid.playingIndex = next;
+        } else {
+            amdroid.playingIndex++;
+
+            // Reset playlist to beginning if repeat is enabled
+            if ( amdroid.playingIndex >= amdroid.playlistCurrent.size() && repeatEnabled )
+                amdroid.playingIndex = 0;
+        }
+    }
+
+    private void prevInPlaylist() {
+        if ( shuffleEnabled ) {
+            int currIndex = shuffleHistory.indexOf( amdroid.playingIndex );
+
+            // Call a random next song if this is the first song
+            if ( shuffleHistory.size() < 1 ) {
+                nextInPlaylist();
+
+                return;
+            }
+
+            // Previous (Current item is not in the shuffle history)
+            if ( currIndex == -1 ) {
+                // Set previous song
+                amdroid.playingIndex = (Integer)shuffleHistory.get( shuffleHistory.size() - 1 );
+
+                // Remove item, I consider Previous like an undo
+                shuffleHistory.remove( shuffleHistory.size() - 1 );
+            }
+            // This shouldn't be possible, but...
+            else if ( currIndex > 0 ) {
+                amdroid.playingIndex = (Integer)shuffleHistory.get( currIndex - 1 );
+
+                shuffleHistory.remove( currIndex );
+            }
+        }
+        // Do not call previous if it is the first song
+        else if ( amdroid.playingIndex > 0 )
+            amdroid.playingIndex--;
+    }
 
     /* on pause and on resume make sure that we don't attempt to display the MediaController when 
      * we can't see it */
@@ -164,6 +232,43 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             }
             pla.refresh();
             break;
+
+	case R.id.pl_shuffle:
+	    if ( item.isChecked() ) {
+		// Clean Shuffle History
+		shuffleHistory.clear();
+
+		item.setChecked( false );
+		item.setTitle( R.string.shuffle );
+
+		// Disable Shuffle
+		shuffleEnabled = false;
+	    } else {
+		item.setChecked( true );
+		item.setTitle( R.string.shuffle2 );
+
+		// Enable Shuffle
+		shuffleEnabled = true;
+	    }
+
+	    break;
+
+	case R.id.pl_repeat:
+	    if ( item.isChecked() ) {
+		item.setChecked( false );
+		item.setTitle( R.string.repeat );
+
+		// Disable Repeat
+		repeatEnabled = false;
+	    } else {
+		item.setChecked( true );
+		item.setTitle( R.string.repeat2 );
+
+		// Enable Repeat
+		repeatEnabled = true;
+	    }
+
+	    break;
         }
         return true;
     }
@@ -265,7 +370,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     public void onCompletion(MediaPlayer media) {
         turnOffPlayingView();
-        amdroid.playingIndex++;
+        nextInPlaylist();
         play();
     }
 
@@ -283,7 +388,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     {
         public void onClick(View v) {
             turnOffPlayingView();
-            amdroid.playingIndex--;
+            prevInPlaylist();
             play();
         }
     }
@@ -292,7 +397,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     {
         public void onClick(View v) {
             turnOffPlayingView();
-            amdroid.playingIndex++;
+            nextInPlaylist();
             play();
         }
     }

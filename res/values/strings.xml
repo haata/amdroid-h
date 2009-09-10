@@ -14,4 +14,8 @@
     <string name="summary_password_preference"></string>
     <string name="dialog_password_preference">password</string>
     <string name="search_label">Songs</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="shuffle2">|Shuffle|</string>
+    <string name="repeat">Repeat</string>
+    <string name="repeat2">|Repeat|</string>
 </resources>
