@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.content.SharedPreferences;
 import android.content.Context;
-import android.widget.Toast;
 import android.preference.PreferenceManager;
 import android.os.Handler;
 import android.os.Looper;

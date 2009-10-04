@@ -5,10 +5,10 @@ package com.sound.ampache;
  * +------------------------------------------------------------------------+                                
  * | This program is free software; you can redistribute it and/or          |                                
  * | modify it under the terms of the GNU General Public License            |                                
- * | as published by the Free Software Foundation; either version 2         |                                
- * | of the License, or (at your option) any later version.                 |                                
- * |                                                                        |                                
- * | This program is distributed in the hope that it will be useful,        |                                
+ * | as published by the Free Software Foundation; either version 2         |
+ * | of the License, or (at your option) any later version.                 |
+ * |                                                                        |
+ * | This program is distributed in the hope that it will be useful,        |
  * | but WITHOUT ANY WARRANTY; without even the implied warranty of         |                                
  * | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |                                
  * | GNU General Public License for more details.                           |                                
@@ -36,6 +36,7 @@ import android.widget.Toast;
 import android.widget.ListView;
 import com.sound.ampache.objects.*;
 import java.util.ArrayList;
+import java.net.URLEncoder;
 
 public final class songSearch extends ListActivity {
     
@@ -44,8 +45,7 @@ public final class songSearch extends ListActivity {
     private ArrayList<ampacheObject> list = null;
     private ProgressDialog dlog;
 
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -58,10 +58,18 @@ public final class songSearch extends ListActivity {
 
         searchCompleteHandler = new searchHandler();
 
-        if (Intent.ACTION_SEARCH.equals(queryAction)) {
+        // Are we being 're-created' ?
+        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getParcelableArrayList("list") : null;
+
+        if (Intent.ACTION_SEARCH.equals(queryAction) && list == null) {
             directive = new String[2];
             directive[0] = "search_songs";
-            directive[1] = queryIntent.getStringExtra(SearchManager.QUERY);
+
+            try {
+                directive[1] = URLEncoder.encode(queryIntent.getStringExtra(SearchManager.QUERY), "UTF-8");
+            } catch (Exception poo) {
+                return;
+            }
             
             Message searchMsg = new Message();
             searchMsg.arg1 = 0;
@@ -76,6 +84,8 @@ public final class songSearch extends ListActivity {
             
             setListAdapter(searchCompleteHandler.ca);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(searchMsg);
+        } else {
+            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
         }
     }
     
@@ -99,6 +109,10 @@ public final class songSearch extends ListActivity {
         return true;
     }
     
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        bundle.putParcelableArrayList("list", list);
+    }
 
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
