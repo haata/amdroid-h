@@ -55,7 +55,7 @@ public class Song extends ampacheObject implements Externalizable {
 
     /* Replace the old session id with our current one */
     public String liveUrl() {
-        return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken);
+        return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken).replaceFirst(".ogg$", ".mp3");
     }
     
     public boolean hasChildren() {
