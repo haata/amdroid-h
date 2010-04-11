@@ -1,8 +1,8 @@
 package com.sound.ampache;
 
-/* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
- * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
- * Copyrigth (c) 2010 MTGap
+/* Copyright (c) 2008 Kevin James Purdy  <purdyk@onid.orst.edu >
+ * Copyright (c) 2010 Jacob Alexander    < haata@users.sf.net  >
+ * Copyrigth (c) 2010 Michael Gapczynski <GapczynskiM@gmail.com>
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
