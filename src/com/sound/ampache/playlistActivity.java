@@ -1,7 +1,7 @@
 package com.sound.ampache;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
- * Copyright (c) 2009 Jacob Alexander   < haata@users.sf.net >
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -105,7 +105,8 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             mc.setEnabled(false);
         }
 
-
+        // Center the playlist at the current song
+        centerList( 0 );
     }
 
     // List for keeping track of Shuffle/Random
@@ -390,6 +391,10 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         public void onClick(View v) {
             turnOffPlayingView();
             prevInPlaylist();
+
+            // Center the playlist just above the next song (-1 is handled by android)
+            centerList( -1 );
+
             play();
         }
     }
@@ -399,8 +404,17 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         public void onClick(View v) {
             turnOffPlayingView();
             nextInPlaylist();
+
+            // Center the playlist just above the next song (-1 is handled by android)
+            centerList( -1 );
+
             play();
         }
+    }
+
+    private void centerList ( int adjust )
+    {
+            lv.setSelection( amdroid.playingIndex + adjust );
     }
 
     private class playlistAdapter extends BaseAdapter
@@ -469,3 +483,6 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
 }
+
+// ex:tabstop=4 shiftwidth=4 expandtab:
+
