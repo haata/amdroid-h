@@ -23,8 +23,10 @@ package com.sound.ampache;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
@@ -46,10 +48,14 @@ import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.widget.Toast;
 import android.net.Uri;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.FileInputStream;
 import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
+import java.net.URL;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -57,9 +63,12 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 {
     private staticMedia mc;
     private ListView lv;
+    private ImageView artView;
 
     private playlistAdapter pla;
     private Boolean prepared = true;
+
+    private Boolean albumArtEnabled = false;
 
     public void onCreate(Bundle savedInstanceState)
     {
@@ -98,6 +107,13 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
         mc.setMediaPlayer(this);
 
+        // Setup Album Art View TODO
+        artView = (ImageView)findViewById(R.id.picview);
+
+        // Load Album Art on Entry, currently SLOOOOOOW so TODO
+        //if ( amdroid.playlistCurrent.size() > 0 )
+        //    loadAlbumArt();
+
         if (amdroid.mp.isPlaying()) {
             mc.setEnabled(true);
             mc.show();
@@ -125,7 +141,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             if ( shuffleHistory.size() >= amdroid.playlistCurrent.size() && repeatEnabled )
                 shuffleHistory.clear();
             else
-		amdroid.playingIndex = amdroid.playlistCurrent.size();
+                amdroid.playingIndex = amdroid.playlistCurrent.size();
 
             int next = 0;
             Random rand = new Random();
@@ -235,46 +251,79 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             pla.refresh();
             break;
 
-	case R.id.pl_shuffle:
-	    if ( item.isChecked() ) {
-		// Clean Shuffle History
-		shuffleHistory.clear();
+        case R.id.pl_shuffle:
+            if ( item.isChecked() ) {
+            // Clean Shuffle History
+            shuffleHistory.clear();
 
-		item.setChecked( false );
-		item.setTitle( R.string.shuffle );
+            item.setChecked( false );
+            item.setTitle( R.string.shuffle );
 
-		// Disable Shuffle
-		shuffleEnabled = false;
-	    } else {
-		item.setChecked( true );
-		item.setTitle( R.string.shuffle2 );
+            // Disable Shuffle
+            shuffleEnabled = false;
+            } else {
+            item.setChecked( true );
+            item.setTitle( R.string.shuffle2 );
 
-		// Enable Shuffle
-		shuffleEnabled = true;
-	    }
+            // Enable Shuffle
+            shuffleEnabled = true;
+            }
 
-	    break;
+            break;
 
-	case R.id.pl_repeat:
-	    if ( item.isChecked() ) {
-		item.setChecked( false );
-		item.setTitle( R.string.repeat );
+        case R.id.pl_repeat:
+            if ( item.isChecked() ) {
+            item.setChecked( false );
+            item.setTitle( R.string.repeat );
 
-		// Disable Repeat
-		repeatEnabled = false;
-	    } else {
-		item.setChecked( true );
-		item.setTitle( R.string.repeat2 );
+            // Disable Repeat
+            repeatEnabled = false;
+            } else {
+            item.setChecked( true );
+            item.setTitle( R.string.repeat2 );
 
-		// Enable Repeat
-		repeatEnabled = true;
-	    }
+            // Enable Repeat
+            repeatEnabled = true;
+            }
 
-	    break;
+            break;
+
+        case R.id.pl_albumart:
+            loadAlbumArt();
+            albumArtEnabled = true;
+            break;
         }
         return true;
     }
 
+    private void loadAlbumArt()
+    {
+        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.playingIndex);
+
+        Log.i("Amdroid", "Art URL     - " + chosen.art );
+        Log.i("Amdroid", "Art URL (C) - " + chosen.liveArt() );
+
+        try {
+            URL artUrl = new URL( chosen.liveArt() );
+            Object artContent = artUrl.getContent();
+            Drawable albumArt = Drawable.createFromStream( (InputStream) artContent, "src" );
+            artView.setImageDrawable( albumArt );
+
+            if ( artView.getDrawable() != null )
+                artView.setVisibility( 0 );
+            /* Something needs to happen here to clear the image view, too lazy atm
+            else
+            {
+                artView.setVisibility( 2 );
+            }
+            */
+
+        } catch ( MalformedURLException e ) {
+            Log.i("Amdroid", "Album Art URL sucks! Try something else.");
+        } catch ( IOException e ) {
+            Log.i("Amdroid", "Teh interwebs died...");
+        }
+    }
 
     /* callbacks for the MediaPlayer and MediaController */
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
@@ -338,12 +387,21 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             amdroid.mp.stop();
         }
 
+        // Only load album art if requested
+        if ( albumArtEnabled )
+        {
+            loadAlbumArt();
+        }
+
         amdroid.mp.reset();
         try {
+            Log.i("Amdroid", "Song URL     - " + chosen.url );
+            Log.i("Amdroid", "Song URL (C) - " + chosen.liveUrl() );
             amdroid.mp.setDataSource(chosen.liveUrl());
             amdroid.mp.prepareAsync();
             prepared = false;
         } catch (Exception blah) {
+            Log.i("Amdroid", "Tried to get the song but couldn't...sorry D:");
             return;
         }
         turnOnPlayingView();

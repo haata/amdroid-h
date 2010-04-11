@@ -1,6 +1,7 @@
 package com.sound.ampache.objects;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -56,6 +57,11 @@ public class Song extends ampacheObject implements Externalizable {
     /* Replace the old session id with our current one */
     public String liveUrl() {
         return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken).replaceFirst(".ogg$", ".mp3");
+    }
+
+    /* Replace old session id, to use with the Album Art */
+    public String liveArt() {
+        return art.replaceAll("auth=[^&]+","auth=" + com.sound.ampache.amdroid.comm.authToken);
     }
     
     public boolean hasChildren() {
@@ -123,3 +129,6 @@ public class Song extends ampacheObject implements Externalizable {
     }
 
 }
+
+// ex:tabstop=4 shiftwidth=4 expandtab:
+
