@@ -1,6 +1,8 @@
 package com.sound.ampache;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
+ * Copyrigth (c) 2010 MTGap
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -25,6 +27,7 @@ import android.app.Activity;
 import android.app.SearchManager;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -68,6 +71,37 @@ public class dashActivity extends Activity implements OnClickListener {
             return;
         }
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Display song name in the "Now Playing" section.
+        TextView st = (TextView) findViewById(R.id.title);
+        String title = "";
+        try {
+            if (amdroid.mp.isPlaying()) {
+                title = "Now Playing - " + amdroid.playlistCurrent.get(amdroid.playingIndex).name;
+            } else {
+                title = "Paused - " + amdroid.playlistCurrent.get(amdroid.playingIndex).name;
+            }
+        } catch(Exception e) {
+            title = "No Song Selected";
+        }
+
+        st.setText(title);
+
+        // Display song info in the "Now Playing" section
+        TextView si = (TextView) findViewById(R.id.artist);
+        String info = "";
+        try {
+            info = amdroid.playlistCurrent.get(amdroid.playingIndex).extraString();
+        } catch(Exception e) {
+            info = "Show current playlist";
+        }
+
+        si.setText(info);
     }
     
     @Override
@@ -136,3 +170,6 @@ public class dashActivity extends Activity implements OnClickListener {
         return false;
     }
 }
+
+// ex:tabstop=4 shiftwidth=4 expandtab:
+
