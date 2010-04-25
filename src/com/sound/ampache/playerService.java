@@ -1,4 +1,4 @@
-package com.sound.amdriod;
+package com.sound.ampache;
 
 import android.app.Service;
 
