@@ -1,6 +1,7 @@
 package com.sound.ampache;
 
-/* Copyright (c) 2008-2009 Kevin James Purdy <purdyk@gmail.com>                                              
+/* Copyright (c) 2008-2009 	Kevin James Purdy <purdyk@gmail.com>                                              
+ * Copyright (c) 2010 		Krisopher Heijari <iif.ftw@gmail.com>
  *                                                                                                           
  * +------------------------------------------------------------------------+                                
  * | This program is free software; you can redistribute it and/or          |                                
@@ -20,9 +21,12 @@ package com.sound.ampache;
  * +------------------------------------------------------------------------+                                
  */
 
+import android.app.Activity;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -38,101 +42,37 @@ import com.sound.ampache.objects.*;
 import java.util.ArrayList;
 import java.net.URLEncoder;
 
-public final class songSearch extends ListActivity {
+// The songSearch activity catches searches made via the search button. It only acts as a wrapper 
+// for the collectionACtivity. 
+public final class songSearch extends Activity {
     
-    public searchHandler searchCompleteHandler;
-    private String[] directive;
-    private ArrayList<ampacheObject> list = null;
-    private ProgressDialog dlog;
-
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        amdroid.comm.ping();
-
-        final Intent queryIntent = getIntent();
-        final String queryAction = queryIntent.getAction();
-
-        setTitle("Music Search");
-
-        searchCompleteHandler = new searchHandler();
-
-        // Are we being 're-created' ?
-        list = savedInstanceState != null ? (ArrayList) savedInstanceState.getParcelableArrayList("list") : null;
-
-        if (Intent.ACTION_SEARCH.equals(queryAction) && list == null) {
-            directive = new String[2];
+    public void onCreate( Bundle savedInstanceState ) 
+    {
+    	// We set visibility to false since we never want this activity to actually be shown
+    	setVisible(false);
+    	super.onCreate(savedInstanceState);
+    	String[] directive;
+        Intent searchIntent = getIntent();
+    	final String searchAction = searchIntent.getAction();
+    	
+    	if ( Intent.ACTION_SEARCH.equals(searchAction) ) 
+    	{
+    		directive = new String[2];
             directive[0] = "search_songs";
-
-            try {
-                directive[1] = URLEncoder.encode(queryIntent.getStringExtra(SearchManager.QUERY), "UTF-8");
-            } catch (Exception poo) {
-                return;
-            }
-            
-            Message searchMsg = new Message();
-            searchMsg.arg1 = 0;
-            searchMsg.what = 0x1337;
-            searchMsg.obj = directive;
-
-            dlog = ProgressDialog.show(this, "", "Searching...", true);
-            
-            searchMsg.replyTo = new Messenger(searchCompleteHandler);
-            list = new ArrayList();
-            searchCompleteHandler.ca = new collectionAdapter(this, R.layout.browsable_item, list);
-            
-            setListAdapter(searchCompleteHandler.ca);
-            amdroid.requestHandler.incomingRequestHandler.sendMessage(searchMsg);
-        } else {
-            setListAdapter(new collectionAdapter(this, R.layout.browsable_item, list));
-        }
-    }
-    
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        menu.add(0, 0, 0, "Add All").setIcon(android.R.drawable.ic_menu_add);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-        case 0:
-            amdroid.playlistCurrent.addAll((ArrayList)list);
-            break;
-            
-        default:
-            return false;
-        }
-        return true;
-    }
-    
-    protected void onSaveInstanceState(Bundle bundle) {
-        super.onSaveInstanceState(bundle);
-        bundle.putParcelableArrayList("list", list);
-    }
-
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        ampacheObject val = (ampacheObject) l.getItemAtPosition(position);
-        Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
-        amdroid.playlistCurrent.add((Song) val);
-        return;
-    }
-    
-    private class searchHandler extends Handler {
-        public collectionAdapter ca;
-        
-        public void handleMessage(Message msg) {
-            switch(msg.what) {
-            case (0x1337):
-                list.addAll((ArrayList) msg.obj);
-                dlog.dismiss();
-                ca.notifyDataSetChanged();
-                break;
-            }
-        }
-        
+	        try {
+	            directive[1] = URLEncoder.encode(searchIntent.getStringExtra(SearchManager.QUERY), "UTF-8");
+	        } catch (Exception poo) {
+	            return;
+	        }
+	        
+	        Intent intentNew = new Intent().setClass(this, collectionActivity.class);
+	    	intentNew = intentNew.putExtra("directive", directive).putExtra("title", "Song Search");
+	    	
+	    	startActivity(intentNew);
+	    	
+	    	// We finish this activity after starting the new one. This way the back button will skip past
+	    	// this activity so we avoid a black screen when pressing back after searching. 
+	    	finish();
+    	}
     }
 }

@@ -59,6 +59,7 @@ public final class collectionActivity extends ListActivity implements OnItemLong
     private ArrayList<ampacheObject> list = null;
     private String[] directive;
     private Boolean isFetching = false;
+    private ProgressDialog dlog;
 
     /** Called when the activity is first created. */
     @Override
@@ -145,6 +146,11 @@ public final class collectionActivity extends ListActivity implements OnItemLong
                 setProgressBarVisibility(true);
                 list = new ArrayList(amdroid.comm.songs);
                 requestMsg.arg2 = amdroid.comm.songs;
+            } else if (directive[0].equals("search_songs")) {
+            	list = new ArrayList();
+                requestMsg.what = 0x1337;
+                dlog = ProgressDialog.show(this, "", "Searching...", true);
+                setProgressBarIndeterminateVisibility(true);
             } else {
                 list = new ArrayList();
                 requestMsg.what = 0x1337;
@@ -276,6 +282,11 @@ public final class collectionActivity extends ListActivity implements OnItemLong
                 list.addAll((ArrayList) msg.obj);
                 setProgressBarIndeterminateVisibility(false);
                 ca.notifyDataSetChanged();
+                if (dlog != null) {
+                	if (dlog.isShowing()){
+                		dlog.dismiss();
+                	}
+                }
                 isFetching = false;
                 break;
             case (0x1338):
