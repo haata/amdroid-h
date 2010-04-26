@@ -150,7 +150,7 @@ public final class collectionActivity extends ListActivity implements OnItemLong
                 list = new ArrayList(amdroid.comm.songs);
                 requestMsg.arg2 = amdroid.comm.songs;
             } else if (directive[0].equals("search_songs")) {
-            	list = new ArrayList();
+                list = new ArrayList();
                 requestMsg.what = 0x1337;
                 dlog = ProgressDialog.show(this, "", "Searching...", true);
                 setProgressBarIndeterminateVisibility(true);
@@ -217,33 +217,34 @@ public final class collectionActivity extends ListActivity implements OnItemLong
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-    	
-    	Intent intent = null;
-    	
+
+        Intent intent = null;
+
         switch (item.getItemId()) {
         case R.id.playing:
-        	intent = new Intent().setClass(this, playlistActivity.class);
-        	startActivity(intent);
-        	break;
-        	
+            intent = new Intent().setClass(this, playlistActivity.class);
+            startActivity(intent);
+            break;
+
         case R.id.prefs:
-        	intent = new Intent().setClass(this, prefsActivity.class);
-        	startActivity(intent);
-        	break;
-        	
+            intent = new Intent().setClass(this, prefsActivity.class);
+            startActivity(intent);
+            break;
+
         case R.id.dashboard:
-        	intent = new Intent().setClass(this, dashActivity.class);
-        	startActivity(intent);
-        	break;
-        	
-        /*case R.id.addall:
-        	amdroid.playlistCurrent.addAll((ArrayList)list);
-        	break;*/
-        
+            intent = new Intent().setClass(this, dashActivity.class);
+            startActivity(intent);
+            break;
+
+        /*
+         * case R.id.addall: amdroid.playlistCurrent.addAll((ArrayList)list);
+         * break;
+         */
+
         default:
-        	return false;
+            return false;
         }
-        
+
         return true;
     }
 
@@ -324,9 +325,9 @@ public final class collectionActivity extends ListActivity implements OnItemLong
                 setProgressBarIndeterminateVisibility(false);
                 ca.notifyDataSetChanged();
                 if (dlog != null) {
-                	if (dlog.isShowing()){
-                		dlog.dismiss();
-                	}
+                    if (dlog.isShowing()) {
+                        dlog.dismiss();
+                    }
                 }
                 isFetching = false;
                 break;

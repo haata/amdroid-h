@@ -45,34 +45,35 @@ import java.net.URLEncoder;
 // The songSearch activity catches searches made via the search button. It only acts as a wrapper 
 // for the collectionACtivity. 
 public final class songSearch extends Activity {
-    
-    public void onCreate( Bundle savedInstanceState ) 
-    {
-    	// We set visibility to false since we never want this activity to actually be shown
-    	setVisible(false);
-    	super.onCreate(savedInstanceState);
-    	String[] directive;
+
+    public void onCreate(Bundle savedInstanceState) {
+        // We set visibility to false since we never want this activity to
+        // actually be shown
+        setVisible(false);
+        super.onCreate(savedInstanceState);
+        String[] directive;
         Intent searchIntent = getIntent();
-    	final String searchAction = searchIntent.getAction();
-    	
-    	if ( Intent.ACTION_SEARCH.equals(searchAction) ) 
-    	{
-    		directive = new String[2];
+        final String searchAction = searchIntent.getAction();
+
+        if (Intent.ACTION_SEARCH.equals(searchAction)) {
+            directive = new String[2];
             directive[0] = "search_songs";
-	        try {
-	            directive[1] = URLEncoder.encode(searchIntent.getStringExtra(SearchManager.QUERY), "UTF-8");
-	        } catch (Exception poo) {
-	            return;
-	        }
-	        
-	        Intent intentNew = new Intent().setClass(this, collectionActivity.class);
-	    	intentNew = intentNew.putExtra("directive", directive).putExtra("title", "Song Search");
-	    	
-	    	startActivity(intentNew);
-	    	
-	    	// We finish this activity after starting the new one. This way the back button will skip past
-	    	// this activity so we avoid a black screen when pressing back after searching. 
-	    	finish();
-    	}
+            try {
+                directive[1] = URLEncoder.encode(searchIntent.getStringExtra(SearchManager.QUERY), "UTF-8");
+            } catch (Exception poo) {
+                return;
+            }
+
+            Intent intentNew = new Intent().setClass(this, collectionActivity.class);
+            intentNew = intentNew.putExtra("directive", directive).putExtra("title", "Song Search");
+
+            startActivity(intentNew);
+
+            // We finish this activity after starting the new one. This way the
+            // back button will skip past
+            // this activity so we avoid a black screen when pressing back after
+            // searching.
+            finish();
+        }
     }
 }
