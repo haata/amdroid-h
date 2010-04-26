@@ -41,6 +41,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.ImageView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
@@ -204,6 +207,44 @@ public final class collectionActivity extends ListActivity implements OnItemLong
             dataReadyHandler.stop = true;
             amdroid.requestHandler.stop = true;
         }
+    }
+    
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.collection_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	
+    	Intent intent = null;
+    	
+        switch (item.getItemId()) {
+        case R.id.playing:
+        	intent = new Intent().setClass(this, playlistActivity.class);
+        	startActivity(intent);
+        	break;
+        	
+        case R.id.prefs:
+        	intent = new Intent().setClass(this, prefsActivity.class);
+        	startActivity(intent);
+        	break;
+        	
+        case R.id.dashboard:
+        	intent = new Intent().setClass(this, dashActivity.class);
+        	startActivity(intent);
+        	break;
+        	
+        /*case R.id.addall:
+        	amdroid.playlistCurrent.addAll((ArrayList)list);
+        	break;*/
+        
+        default:
+        	return false;
+        }
+        
+        return true;
     }
 
     public boolean onItemLongClick(AdapterView l, View v, int position, long id) {
