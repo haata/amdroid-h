@@ -153,6 +153,7 @@ public class ampacheCommunicator
                         
                         if (directive[0].equals("artists")) {
                             hand = new ampacheArtistParser();
+                            append += "&filter=" + directive[1];
                         } else if (directive[0].equals("artist_albums")) {
                             append += "&filter=" + directive[1];
                             hand = new ampacheAlbumParser();
@@ -170,12 +171,16 @@ public class ampacheCommunicator
                             hand = new ampacheArtistParser();
                         } else if (directive[0].equals("albums")) {
                             hand = new ampacheAlbumParser();
+                            append += "&filter=" + directive[1];
                         } else if (directive[0].equals("playlists")) {
                             hand = new ampachePlaylistParser();
+                            append += "&filter=" + directive[1];
                         } else if (directive[0].equals("songs")) {
                             hand = new ampacheSongParser();
+                            append += "&filter=" + directive[1];
                         } else if (directive[0].equals("tags")) {
                             hand = new ampacheTagParser();
+                            append += "&filter=" + directive[1];
                         } else if (directive[0].equals("search_songs")) {
                             hand = new ampacheSongParser();
                             append += "&filter=" + directive[1];

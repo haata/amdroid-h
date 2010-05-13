@@ -21,91 +21,67 @@ package com.sound.ampache;
  * +------------------------------------------------------------------------+
  */
 
-import android.app.Activity;
-import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.view.View.OnClickListener;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.widget.TextView;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import com.sound.ampache.staticMedia.MediaPlayerControl;
-import com.sound.ampache.objects.Song;
-import android.media.MediaPlayer.OnBufferingUpdateListener;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.widget.Toast;
-import android.net.Uri;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.FileInputStream;
 import java.io.ObjectOutputStream;
-import java.io.FileOutputStream;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Random;
 
-public final class playlistActivity extends Activity implements MediaPlayerControl, OnBufferingUpdateListener, OnCompletionListener, OnItemClickListener
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
+
+import com.sound.ampache.amdroid.IntegerNotifiable;
+import com.sound.ampache.objects.Song;
+
+public final class playlistActivity extends Activity implements OnItemClickListener, IntegerNotifiable
 {
-    private staticMedia mc;
     private ListView lv;
     private ImageView artView;
 
     private playlistAdapter pla;
-    private Boolean prepared = true;
 
     private Boolean albumArtEnabled = false;
+    
+    private GlobalMediaPlayerControl gmpc = null;
 
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         
-        /* make sure we're authenticated */
-        amdroid.comm.ping();
-
-        amdroid.mp.setOnBufferingUpdateListener(this);
-        amdroid.mp.setOnCompletionListener(this);
-        mc = new staticMedia(this);
-     
-        amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                public void onPrepared(MediaPlayer mp) {
-                    amdroid.mp.start();
-                    if (amdroid.playListVisible) {
-                        mc.setEnabled(true);
-                        mc.show();
-                        prepared = true;
-                    }
-                }});
-
-        mc.setPrevNextListeners(new nextList(), new prevList());
-
         // Set up our view :D
-        LayoutInflater inflate = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        LinearLayout v = (LinearLayout) inflate.inflate(R.layout.playlist, null);
-        v.addView(mc.getController());
-        setContentView(v);
+        setContentView(R.layout.playlist);
 
         lv = (ListView) findViewById(R.id.list);
         lv.setOnItemClickListener(this);
 
         pla = new playlistAdapter(this);
         lv.setAdapter(pla);
-
-        mc.setMediaPlayer(this);
+        
+        // register our adapter to be called when a change to the currentPlaylist ocurrs  
+        amdroid.registerBaseAdapterNotifiable(pla);
+        
+        //register ourselves to receive callbacks when playing index changes occurr
+        amdroid.registerIntegerNotifiable(this);
 
         // Setup Album Art View TODO
         artView = (ImageView)findViewById(R.id.picview);
@@ -114,100 +90,16 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         //if ( amdroid.playlistCurrent.size() > 0 )
         //    loadAlbumArt();
 
-        if (amdroid.mp.isPlaying()) {
-            mc.setEnabled(true);
-            mc.show();
-        } else {
-            mc.setEnabled(false);
-        }
-
         // Center the playlist at the current song
         centerList( 0 );
+        
+        // Get reference to our mediaplayercontrol
+        gmpc = GlobalMediaPlayerControl.getMpc();
     }
 
-    // List for keeping track of Shuffle/Random
-    private ArrayList shuffleHistory = new ArrayList();
-
-    private boolean shuffleEnabled = false;
-    private boolean  repeatEnabled = false;
-
-    private void nextInPlaylist() {
-        if ( shuffleEnabled ) {
-            // So we don't play a song more than once
-            if ( !shuffleHistory.contains( amdroid.playingIndex ) )
-                shuffleHistory.add( amdroid.playingIndex );
-
-            // Just played the last song, repeat if repeat is enabled, stop otherwise
-            if ( shuffleHistory.size() >= amdroid.playlistCurrent.size() && repeatEnabled )
-                shuffleHistory.clear();
-            else
-                amdroid.playingIndex = amdroid.playlistCurrent.size();
-
-            int next = 0;
-            Random rand = new Random();
-
-            // Try random numbers until finding one that is not used
-            do {
-                next = rand.nextInt( amdroid.playlistCurrent.size() );
-            } while ( shuffleHistory.contains( next ) );
-
-            // Set next playing index
-            amdroid.playingIndex = next;
-        } else {
-            amdroid.playingIndex++;
-
-            // Reset playlist to beginning if repeat is enabled
-            if ( amdroid.playingIndex >= amdroid.playlistCurrent.size() && repeatEnabled )
-                amdroid.playingIndex = 0;
-        }
-    }
-
-    private void prevInPlaylist() {
-        if ( shuffleEnabled ) {
-            int currIndex = shuffleHistory.indexOf( amdroid.playingIndex );
-
-            // Call a random next song if this is the first song
-            if ( shuffleHistory.size() < 1 ) {
-                nextInPlaylist();
-
-                return;
-            }
-
-            // Previous (Current item is not in the shuffle history)
-            if ( currIndex == -1 ) {
-                // Set previous song
-                amdroid.playingIndex = (Integer)shuffleHistory.get( shuffleHistory.size() - 1 );
-
-                // Remove item, I consider Previous like an undo
-                shuffleHistory.remove( shuffleHistory.size() - 1 );
-            }
-            // This shouldn't be possible, but...
-            else if ( currIndex > 0 ) {
-                amdroid.playingIndex = (Integer)shuffleHistory.get( currIndex - 1 );
-
-                shuffleHistory.remove( currIndex );
-            }
-        }
-        // Do not call previous if it is the first song
-        else if ( amdroid.playingIndex > 0 )
-            amdroid.playingIndex--;
-    }
-
-    /* on pause and on resume make sure that we don't attempt to display the MediaController when 
-     * we can't see it */
     @Override
-    protected void onResume() {
-        super.onResume();
-        amdroid.playListVisible = true;
-    }
-    
-    @Override
-    protected void onPause() {
-        super.onResume();
-        amdroid.playListVisible = false;
-    }
-
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.clear();
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.playlist_menu, menu);
         return true;
@@ -217,11 +109,11 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.pl_clear:
-            if (isPlaying())
+            if (gmpc.isPlaying())
                 amdroid.mp.stop();
-            amdroid.playingIndex = 0;
+            amdroid.setPlayingIndex(0);
             pla.clearItems();
-            mc.setEnabled(false);
+            //mc.setEnabled(false);
             break;
 
         case R.id.pl_save:
@@ -236,10 +128,10 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             break;
 
         case R.id.pl_load:
-            if (isPlaying())
+            if (gmpc.isPlaying())
                 amdroid.mp.stop();
-            amdroid.playingIndex = 0;
-            mc.setEnabled(false);
+            amdroid.setPlayingIndex(0);
+            //mc.setEnabled(false);
             try {
                 FileInputStream pin = openFileInput("playlist");
                 ObjectInputStream poin = new ObjectInputStream(pin);
@@ -251,46 +143,17 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             pla.refresh();
             break;
 
-        case R.id.pl_shuffle:
-            if ( item.isChecked() ) {
-            // Clean Shuffle History
-            shuffleHistory.clear();
-
-            item.setChecked( false );
-            item.setTitle( R.string.shuffle );
-
-            // Disable Shuffle
-            shuffleEnabled = false;
-            } else {
-            item.setChecked( true );
-            item.setTitle( R.string.shuffle2 );
-
-            // Enable Shuffle
-            shuffleEnabled = true;
-            }
-
-            break;
-
-        case R.id.pl_repeat:
-            if ( item.isChecked() ) {
-            item.setChecked( false );
-            item.setTitle( R.string.repeat );
-
-            // Disable Repeat
-            repeatEnabled = false;
-            } else {
-            item.setChecked( true );
-            item.setTitle( R.string.repeat2 );
-
-            // Enable Repeat
-            repeatEnabled = true;
-            }
-
-            break;
 
         case R.id.pl_albumart:
-            loadAlbumArt();
-            albumArtEnabled = true;
+            if (albumArtEnabled) {
+                albumArtEnabled = false;
+                artView.setVisibility(View.GONE);
+            }
+            else {
+                artView.setVisibility(View.VISIBLE);
+                albumArtEnabled = true;
+                loadAlbumArt();
+            }
             break;
         }
         return true;
@@ -298,7 +161,15 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
     private void loadAlbumArt()
     {
-        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.playingIndex);
+        if (amdroid.playlistCurrent.size()<=0 || !albumArtEnabled){
+            artView.setVisibility(View.GONE);
+            return;
+        }
+        
+        int i = amdroid.getPlayingIndex();
+        if (i>=amdroid.playlistCurrent.size())
+            return;
+        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.getPlayingIndex());
 
         Log.i("Amdroid", "Art URL     - " + chosen.art );
         Log.i("Amdroid", "Art URL (C) - " + chosen.liveArt() );
@@ -310,13 +181,13 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             artView.setImageDrawable( albumArt );
 
             if ( artView.getDrawable() != null )
-                artView.setVisibility( 0 );
-            /* Something needs to happen here to clear the image view, too lazy atm
+                artView.setVisibility( View.VISIBLE );
+            /* Something needs to happen here to clear the image view, too lazy atm */
             else
             {
-                artView.setVisibility( 2 );
+                artView.setVisibility( View.GONE );
             }
-            */
+            
 
         } catch ( MalformedURLException e ) {
             Log.i("Amdroid", "Album Art URL sucks! Try something else.");
@@ -325,92 +196,13 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         }
     }
 
-    /* callbacks for the MediaPlayer and MediaController */
-    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        amdroid.bufferPC = percent;
-    }
-
-    public int getBufferPercentage() {
-        return amdroid.bufferPC;
-    }
-
-    public int getCurrentPosition() {
-        if (amdroid.mp.isPlaying()) {
-            return amdroid.mp.getCurrentPosition();
-        }
-        return 0;
-    }
-
-    public int getDuration() {
-        if (amdroid.mp.isPlaying()) {
-            return amdroid.mp.getDuration();
-        }
-        return 0;
-    }
-
-    public boolean isPlaying() {
-        return amdroid.mp.isPlaying();
-    }
-
-    public void pause() {
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.pause();
-        }
-    }
-
-    public void seekTo(int pos) {
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.seekTo(pos);
-        }
-    }
-
-    public void start() {
-        amdroid.mp.start();
-    }
-
-    public void play() {
-        if (amdroid.playingIndex >= amdroid.playlistCurrent.size()) {
-            amdroid.playingIndex = amdroid.playlistCurrent.size();
-            mc.setEnabled(false);
-            return;
-        }
-
-        if (amdroid.playingIndex < 0) {
-            amdroid.playingIndex = 0;
-            mc.setEnabled(false);
-            return;
-        }
-
-        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.playingIndex);
-
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.stop();
-        }
-
-        // Only load album art if requested
-        if ( albumArtEnabled )
-        {
-            loadAlbumArt();
-        }
-
-        amdroid.mp.reset();
-        try {
-            Log.i("Amdroid", "Song URL     - " + chosen.url );
-            Log.i("Amdroid", "Song URL (C) - " + chosen.liveUrl() );
-            amdroid.mp.setDataSource(chosen.liveUrl());
-            amdroid.mp.prepareAsync();
-            prepared = false;
-        } catch (Exception blah) {
-            Log.i("Amdroid", "Tried to get the song but couldn't...sorry D:");
-            return;
-        }
-        turnOnPlayingView();
-    }
 
     /* These functions help with displaying the |> icon next to the currently playing song */
     private void turnOffPlayingView() {
-        if (amdroid.playingIndex >= lv.getFirstVisiblePosition() && amdroid.playingIndex <= lv.getLastVisiblePosition()) {
-            View holder = lv.getChildAt(amdroid.playingIndex - lv.getFirstVisiblePosition());
+        /* TODO we should probably keep track of which song we've displayed a playing icon for. 
+         * Looping through all items in the listview will be unneffictive for larger lists */
+        for (int i=0; i < lv.getChildCount(); i++){
+            View holder = lv.getChildAt(i);
             if (holder != null) {
                 ImageView img = (ImageView) holder.findViewById(R.id.art);
                 img.setVisibility(View.INVISIBLE);
@@ -419,8 +211,8 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
     }
 
     private void turnOnPlayingView() {
-        if (amdroid.playingIndex >= lv.getFirstVisiblePosition() && amdroid.playingIndex <= lv.getLastVisiblePosition()) {
-            View holder = lv.getChildAt(amdroid.playingIndex - lv.getFirstVisiblePosition());
+        if (amdroid.getPlayingIndex() >= lv.getFirstVisiblePosition() && amdroid.getPlayingIndex() <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(amdroid.getPlayingIndex() - lv.getFirstVisiblePosition());
             if (holder != null) {
                 ImageView img = (ImageView) holder.findViewById(R.id.art);
                 img.setVisibility(View.VISIBLE);
@@ -428,51 +220,18 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         }
     }
 
-    public void onCompletion(MediaPlayer media) {
-        turnOffPlayingView();
-        nextInPlaylist();
-        play();
-    }
-
+    @Override
     public void onItemClick(AdapterView l, View v, int position, long id) {
-        if (prepared) {
-            turnOffPlayingView();
-            amdroid.playingIndex = position;
-            play();
+        if (gmpc.prepared) {
+            amdroid.setPlayingIndex(position);
+            gmpc.play();
         }
     }
 
-    /* our child classes */
-
-    private class prevList implements OnClickListener
-    {
-        public void onClick(View v) {
-            turnOffPlayingView();
-            prevInPlaylist();
-
-            // Center the playlist just above the next song (-1 is handled by android)
-            centerList( -1 );
-
-            play();
-        }
-    }
-
-    private class nextList implements OnClickListener
-    {
-        public void onClick(View v) {
-            turnOffPlayingView();
-            nextInPlaylist();
-
-            // Center the playlist just above the next song (-1 is handled by android)
-            centerList( -1 );
-
-            play();
-        }
-    }
 
     private void centerList ( int adjust )
     {
-            lv.setSelection( amdroid.playingIndex + adjust );
+            lv.setSelection( amdroid.getPlayingIndex() + adjust );
     }
 
     private class playlistAdapter extends BaseAdapter
@@ -500,7 +259,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         }
 
         public void clearItems() {
-            amdroid.playlistCurrent.clear();
+            amdroid.clearPlaylistCurrent();
             notifyDataSetChanged();
         }
 
@@ -508,7 +267,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
             plI holder;
             Song cur = amdroid.playlistCurrent.get(position);
 
-            /* we don't reuse */
+            /* we don't reuse  */
             if (convertView == null) {
                 convertView = mInflater.inflate(R.layout.playlist_item, null);
                 holder = new plI();
@@ -524,7 +283,7 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
 
             holder.title.setText(cur.name);
             holder.other.setText(cur.extraString());
-            if (amdroid.mp.isPlaying() && amdroid.playingIndex == position) {
+            if (amdroid.getPlayingIndex() == position) {
                 holder.art.setVisibility(View.VISIBLE);
             } else {
                 holder.art.setVisibility(View.INVISIBLE);
@@ -539,6 +298,16 @@ public final class playlistActivity extends Activity implements MediaPlayerContr
         TextView other;
         ImageView art;
     }
+
+
+    @Override
+    public void playingIndexChange() {
+        turnOffPlayingView();
+        centerList(-1);
+        turnOnPlayingView();
+        loadAlbumArt();
+    }
+
 
 }
 

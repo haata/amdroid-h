@@ -2,11 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
       android:orientation="vertical"
       android:layout_width="fill_parent"
-      android:layout_height="48dip">
+      android:layout_height="42dip">
 
   <TextView android:id="@+id/title" 
             android:singleLine="true"
-            android:textSize="24sp"
+            android:textSize="16sp"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content" />
 

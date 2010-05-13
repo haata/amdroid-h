@@ -26,11 +26,13 @@ public final class staticMedia extends FrameLayout {
     private ImageButton mPauseButton;
     private ImageButton mNextButton;
     private ImageButton mPrevButton;
+    private ImageButton mRepeatButton;
+    private ImageButton mShuffleButton;
     private static final int    FADE_OUT = 1;
     private static final int    SHOW_PROGRESS = 2;
     private boolean             mUseFastForward;
     private boolean             mListenersSet;
-    private View.OnClickListener mNextListener, mPrevListener;
+    private View.OnClickListener mNextListener, mPrevListener, mRepeatListener, mShuffleListener;
     StringBuilder               mFormatBuilder;
     Formatter                   mFormatter;
 
@@ -77,6 +79,14 @@ public final class staticMedia extends FrameLayout {
         mPrevButton = (ImageButton) v.findViewById(R.id.prev);
         if (mPrevButton != null && !mListenersSet) {
             mPrevButton.setVisibility(View.GONE);
+        }
+        mRepeatButton = (ImageButton) v.findViewById(R.id.repeat);
+        if (mRepeatButton != null && !mListenersSet) {
+            mRepeatButton.setVisibility(View.GONE);
+        }
+        mShuffleButton = (ImageButton) v.findViewById(R.id.shuffle);
+        if (mShuffleButton != null && !mListenersSet) {
+            mRepeatButton.setVisibility(View.GONE);
         }
 
         mProgress = (ProgressBar) v.findViewById(R.id.mediacontroller_progress);
@@ -228,7 +238,7 @@ public final class staticMedia extends FrameLayout {
         };
 
     @Override
-        public void setEnabled(boolean enabled) {
+    public void setEnabled(boolean enabled) {
         if (mPauseButton != null) {
             mPauseButton.setEnabled(enabled);
         }
@@ -238,10 +248,16 @@ public final class staticMedia extends FrameLayout {
         if (mPrevButton != null) {
             mPrevButton.setEnabled(enabled && mPrevListener != null);
         }
+        if (mShuffleButton != null) {
+            mShuffleButton.setEnabled(enabled && mShuffleListener != null);
+        }
+        if (mRepeatButton != null) {
+            mRepeatButton.setEnabled(enabled && mRepeatListener != null);
+        }
         if (mProgress != null) {
             mProgress.setEnabled(enabled);
         }
-        
+
         super.setEnabled(enabled);
     }
 
@@ -255,11 +271,24 @@ public final class staticMedia extends FrameLayout {
             mPrevButton.setOnClickListener(mPrevListener);
             mPrevButton.setEnabled(mPrevListener != null);
         }
+        
+        if (mRepeatButton != null) {
+            mRepeatButton.setOnClickListener(mRepeatListener);
+            mRepeatButton.setEnabled(mRepeatListener != null);
+        }
+        
+        if (mShuffleButton != null) {
+            mShuffleButton.setOnClickListener(mShuffleListener);
+            mShuffleButton.setEnabled(mShuffleListener != null);
+        }
     }
 
-    public void setPrevNextListeners(View.OnClickListener next, View.OnClickListener prev) {
+    public void setPrevNextListeners(View.OnClickListener next, View.OnClickListener prev,
+            View.OnClickListener repeat, View.OnClickListener shuffle) {
         mNextListener = next;
         mPrevListener = prev;
+        mRepeatListener = repeat;
+        mShuffleListener = shuffle;
         mListenersSet = true;
 
         if (mRoot != null) {
@@ -270,6 +299,12 @@ public final class staticMedia extends FrameLayout {
             }
             if (mPrevButton != null) {
                 mPrevButton.setVisibility(View.VISIBLE);
+            }
+            if (mRepeatButton != null) {
+                mRepeatButton.setVisibility(View.VISIBLE);
+            }
+            if (mShuffleButton != null) {
+                mShuffleButton.setVisibility(View.VISIBLE);
             }
         }
     }

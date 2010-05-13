@@ -31,9 +31,21 @@
         android:paddingTop="4dip"
         android:orientation="horizontal">
 
+		<ImageButton android:id="@+id/repeat" 
+			android:src="@drawable/ic_menu_revert_disabled"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:background="@android:color/transparent"
+			android:layout_weight="1" />
         <ImageButton android:id="@+id/prev" style="@android:style/MediaButton.Previous" />
         <ImageButton android:id="@+id/pause" style="@android:style/MediaButton.Play" />
-        <ImageButton android:id="@+id/next" style="@android:style/MediaButton.Next" /> 
+        <ImageButton android:id="@+id/next" style="@android:style/MediaButton.Next" />
+        <ImageButton android:id="@+id/shuffle" 
+        	android:src="@drawable/ic_menu_shuffle_disabled"
+        	android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:background="@android:color/transparent"
+			android:layout_weight="1" /> 
 
     </LinearLayout>
 
