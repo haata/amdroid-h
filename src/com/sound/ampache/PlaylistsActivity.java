@@ -12,6 +12,7 @@ import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.Messenger;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
@@ -135,14 +136,26 @@ public class PlaylistsActivity extends Activity implements OnItemClickListener, 
         return true;
     }
     
-    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (android.os.Build.VERSION.SDK_INT < 5
+                && keyCode == KeyEvent.KEYCODE_BACK
+                && event.getRepeatCount() == 0) {
+            // Take care of calling this method on earlier versions of
+            // the platform where it doesn't exist.
+            onBackPressed();
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+    
     public void onBackPressed() {
         if (history.size() > 1) {
             history.removeLast();
             updateList(history.getLast(), false);
-            return;
         }
-        super.onBackPressed();
+        else
+            ((AmdroidActivityGroup) getParent()).setActivity(AmdroidActivityGroup.GOTO_HOME);
     }
     
     @Override

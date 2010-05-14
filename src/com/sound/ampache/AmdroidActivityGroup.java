@@ -5,6 +5,7 @@ import android.app.ActivityGroup;
 import android.app.LocalActivityManager;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -58,7 +59,7 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         intent = new Intent();
         /*  choose which activity to spawn on startup. */
         intent.setClass(this, dashActivity.class);
-        setActivity(GOTO_HOME, intent);
+        setActivity(GOTO_HOME);
         
         amdroid.comm.ping();
         
@@ -72,7 +73,7 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         
     }
     
-    public void setActivity(String id, Intent intent){
+    public void setActivity(String id){
         Window w = localActivityManager.startActivity(id, intent);
         View v = w.getDecorView();
         activityFrame.removeAllViews();
@@ -100,27 +101,27 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         switch (v.getId()) {
         case (R.id.goto_home):
             intent.setClass(this, dashActivity.class);
-            setActivity(GOTO_HOME, intent);
+            setActivity(GOTO_HOME);
             break;
         
         case (R.id.goto_music):
             intent.setClass(this, BrowseActivity.class);
-            setActivity(GOTO_MUSIC, intent);
+            setActivity(GOTO_MUSIC);
             break;
 
         case (R.id.goto_playlists):
             intent.setClass(this, PlaylistsActivity.class);
-            setActivity(GOTO_PLAYLISTS, intent);
+            setActivity(GOTO_PLAYLISTS);
             break;
 
         case (R.id.goto_playing):
             intent.setClass(this, playlistActivity.class);
-            setActivity(GOTO_PLAYING, intent);
+            setActivity(GOTO_PLAYING);
             break;
 
         case (R.id.goto_search):
             intent.setClass(this, songSearch.class);
-            setActivity(GOTO_SEARCH, intent);
+            setActivity(GOTO_SEARCH);
             break;
 
         default:
@@ -129,12 +130,11 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         
     }
     
-    
-    /*  Call our active activitys event handlers */
-    public void onBackPressed(){
-        getCurrentActivity().onBackPressed();
-    }
-    
+    /*  
+     *  Call our active activities eventHandlers 
+     *  This is done incase the subactivity does not have a focusbale view. 
+     *  In that case we still want to, for example, be able to display/use the menu.  
+     */
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
         return this.getCurrentActivity().onPrepareOptionsMenu(menu);
@@ -149,12 +149,25 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         return ret;
     }
     
-    @Override
-    public boolean onTouchEvent(MotionEvent event){
-        
-        return true;
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (android.os.Build.VERSION.SDK_INT < 5
+                && keyCode == KeyEvent.KEYCODE_BACK
+                && event.getRepeatCount() == 0) {
+            // Take care of calling this method on earlier versions of
+            // the platform where it doesn't exist.
+            onBackPressed();
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
     
+    public void onBackPressed() {
+        if (getCurrentActivity().getClass()!=dashActivity.class)
+            setActivity(GOTO_HOME);
+        else
+            finish();
+    }
     
 }
 
