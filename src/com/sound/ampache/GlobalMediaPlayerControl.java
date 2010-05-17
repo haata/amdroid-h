@@ -22,8 +22,7 @@ import com.sound.ampache.objects.Song;
 import com.sound.ampache.staticMedia.MediaPlayerControl;
 
 public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlayerControl, 
-    OnBufferingUpdateListener, OnCompletionListener, OnDrawerCloseListener, OnDrawerOpenListener, 
-    OnClickListener {
+    OnBufferingUpdateListener, OnCompletionListener, OnClickListener {
     
     private staticMedia mc;
     public Boolean prepared = true;
@@ -67,9 +66,6 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
         mc.show();
         
         mc.setPrevNextListeners(this, this, this, this);
-        
-        setOnDrawerOpenListener(this);
-        setOnDrawerCloseListener(this);
         
         mpc=this;
     }
@@ -119,12 +115,18 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
 
     public void start() {
         // If current position i s 0 or below we have never played a song and play should be run
-        if (amdroid.mp.getCurrentPosition()<=0)
+        if (!amdroid.mpInit) {
             play();
+            return;
+        }
         amdroid.mp.start();
     }
 
     public void play() {
+        
+        //  set to show that our mediaplayer has been initialized. 
+        amdroid.mpInit = true;
+        
         if (amdroid.getPlayingIndex() >= amdroid.playlistCurrent.size()) {
             amdroid.setPlayingIndex( amdroid.playlistCurrent.size() );
             //mc.setEnabled(false);
@@ -227,16 +229,6 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
         // Do not call previous if it is the first song
         else if ( amdroid.getPlayingIndex() > 0 )
             amdroid.setPlayingIndex( amdroid.getPlayingIndex() -1 );
-    }
-
-    @Override
-    public void onDrawerClosed() {
-        //amdroid.playListVisible=false;
-    }
-
-    @Override
-    public void onDrawerOpened() {
-        //amdroid.playListVisible=true;
     }
 
     @Override

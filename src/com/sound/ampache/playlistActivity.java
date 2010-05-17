@@ -114,7 +114,6 @@ public final class playlistActivity extends Activity implements OnItemClickListe
                 amdroid.mp.stop();
             amdroid.setPlayingIndex(0);
             pla.clearItems();
-            //mc.setEnabled(false);
             break;
 
         case R.id.pl_save:
@@ -201,7 +200,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     /* These functions help with displaying the |> icon next to the currently playing song */
     private void turnOffPlayingView() {
         /* TODO we should probably keep track of which song we've displayed a playing icon for. 
-         * Looping through all items in the listview will be unneffictive for larger lists */
+         * Looping through all items in the listview will be unneffective for large lists */
         for (int i=0; i < lv.getChildCount(); i++){
             View holder = lv.getChildAt(i);
             if (holder != null) {
@@ -310,11 +309,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     }
     
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
-        if (android.os.Build.VERSION.SDK_INT < 5
-                && keyCode == KeyEvent.KEYCODE_BACK
-                && event.getRepeatCount() == 0) {
-            // Take care of calling this method on earlier versions of
-            // the platform where it doesn't exist.
+        if (android.os.Build.VERSION.SDK_INT < 5 && keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             onBackPressed();
             return true;
         }

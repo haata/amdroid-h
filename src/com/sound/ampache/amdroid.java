@@ -53,6 +53,8 @@ public final class amdroid extends Application {
     public static Boolean confChanged;
     protected static Bundle cache;
     private static Boolean mResumeAfterCall = false;
+    
+    public static boolean mpInit = false; 
 
     //Handle phone calls
     private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
