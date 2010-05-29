@@ -2,6 +2,7 @@ package com.sound.ampache;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
  * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
+ * Copyright (c) 2010 Kristopher Heijari < iix.ftw@gmail.com >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -51,10 +52,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
-import com.sound.ampache.amdroid.IntegerNotifiable;
 import com.sound.ampache.objects.Song;
 
-public final class playlistActivity extends Activity implements OnItemClickListener, IntegerNotifiable
+public final class playlistActivity extends Activity implements OnItemClickListener,
+		GlobalMediaPlayerControl.PlayingIndexListener,
+		GlobalMediaPlayerControl.PlaylistCurrentListener
 {
     private ListView lv;
     private ImageView artView;
@@ -77,16 +79,16 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         lv.setAdapter(pla);
         
         // register our adapter to be called when a change to the currentPlaylist ocurrs  
-        amdroid.registerBaseAdapterNotifiable(pla);
+        amdroid.playbackControl.setPlayingIndexListener( this );
         
         //register ourselves to receive callbacks when playing index changes occurr
-        amdroid.registerIntegerNotifiable(this);
+        amdroid.playbackControl.setPlaylistCurrentListener( this );
 
         // Setup Album Art View TODO
         artView = (ImageView)findViewById(R.id.picview);
 
         // Load Album Art on Entry, currently SLOOOOOOW so TODO
-        //if ( amdroid.playlistCurrent.size() > 0 )
+        //if ( amdroid.playbackControl.getPlaylistCurrent().size() > 0 )
         //    loadAlbumArt();
 
         // Center the playlist at the current song
@@ -108,7 +110,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         case R.id.pl_clear:
             if (amdroid.playbackControl.isPlaying())
                 amdroid.mp.stop();
-            amdroid.setPlayingIndex(0);
+            amdroid.playbackControl.setPlayingIndex(0);
             pla.clearItems();
             break;
 
@@ -116,7 +118,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
             try {
                 FileOutputStream pout = openFileOutput("playlist", 0);
                 ObjectOutputStream pos = new ObjectOutputStream(pout);
-                pos.writeObject(amdroid.playlistCurrent);
+                pos.writeObject(amdroid.playbackControl.getPlaylistCurrent());
                 pout.close();
             } catch (Exception poo) {
                 Toast.makeText(this, "Error: " + poo.toString(), Toast.LENGTH_LONG).show();
@@ -126,12 +128,12 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         case R.id.pl_load:
             if (amdroid.playbackControl.isPlaying())
                 amdroid.mp.stop();
-            amdroid.setPlayingIndex(0);
+            amdroid.playbackControl.setPlayingIndex(0);
             //mc.setEnabled(false);
             try {
                 FileInputStream pin = openFileInput("playlist");
                 ObjectInputStream poin = new ObjectInputStream(pin);
-                amdroid.playlistCurrent = (ArrayList<Song>) poin.readObject();
+                amdroid.playbackControl.addAllPlaylistCurrent( (ArrayList<Song>) poin.readObject() );
                 pin.close();
             } catch (Exception poo) {
                 Toast.makeText(this, "Error: " + poo.toString(), Toast.LENGTH_LONG).show();
@@ -157,15 +159,15 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
     private void loadAlbumArt()
     {
-        if (amdroid.playlistCurrent.size()<=0 || !albumArtEnabled){
+        if (amdroid.playbackControl.getPlaylistCurrent().size()<=0 || !albumArtEnabled){
             artView.setVisibility(View.GONE);
             return;
         }
         
-        int i = amdroid.getPlayingIndex();
-        if (i>=amdroid.playlistCurrent.size())
+        int i = amdroid.playbackControl.getPlayingIndex();
+        if (i>=amdroid.playbackControl.getPlaylistCurrent().size())
             return;
-        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.getPlayingIndex());
+        Song chosen = (Song) amdroid.playbackControl.getPlaylistCurrent().get(amdroid.playbackControl.getPlayingIndex());
 
         Log.i("Amdroid", "Art URL     - " + chosen.art );
         Log.i("Amdroid", "Art URL (C) - " + chosen.liveArt() );
@@ -207,8 +209,8 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     }
 
     private void turnOnPlayingView() {
-        if (amdroid.getPlayingIndex() >= lv.getFirstVisiblePosition() && amdroid.getPlayingIndex() <= lv.getLastVisiblePosition()) {
-            View holder = lv.getChildAt(amdroid.getPlayingIndex() - lv.getFirstVisiblePosition());
+        if (amdroid.playbackControl.getPlayingIndex() >= lv.getFirstVisiblePosition() && amdroid.playbackControl.getPlayingIndex() <= lv.getLastVisiblePosition()) {
+            View holder = lv.getChildAt(amdroid.playbackControl.getPlayingIndex() - lv.getFirstVisiblePosition());
             if (holder != null) {
                 ImageView img = (ImageView) holder.findViewById(R.id.art);
                 img.setVisibility(View.VISIBLE);
@@ -219,7 +221,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     @Override
     public void onItemClick(AdapterView l, View v, int position, long id) {
         if (amdroid.playbackControl.prepared) {
-            amdroid.setPlayingIndex(position);
+            amdroid.playbackControl.setPlayingIndex(position);
             amdroid.playbackControl.play();
         }
     }
@@ -227,7 +229,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
     private void centerList ( int adjust )
     {
-            lv.setSelection( amdroid.getPlayingIndex() + adjust );
+            lv.setSelection( amdroid.playbackControl.getPlayingIndex() + adjust );
     }
 
     private class playlistAdapter extends BaseAdapter
@@ -239,11 +241,11 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         }
 
         public int getCount() {
-            return amdroid.playlistCurrent.size();
+            return amdroid.playbackControl.getPlaylistCurrent().size();
         }
 
         public Object getItem(int position) {
-            return amdroid.playlistCurrent.get(position);
+            return amdroid.playbackControl.getPlaylistCurrent().get(position);
         }
 
         public long getItemId(int position) {
@@ -255,13 +257,13 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         }
 
         public void clearItems() {
-            amdroid.clearPlaylistCurrent();
+            amdroid.playbackControl.clearPlaylistCurrent();
             notifyDataSetChanged();
         }
 
         public View getView(int position, View convertView, ViewGroup parent) {
             plI holder;
-            Song cur = amdroid.playlistCurrent.get(position);
+            Song cur = amdroid.playbackControl.getPlaylistCurrent().get(position);
 
             /* we don't reuse  */
             if (convertView == null) {
@@ -279,7 +281,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
             holder.title.setText(cur.name);
             holder.other.setText(cur.extraString());
-            if (amdroid.getPlayingIndex() == position) {
+            if (amdroid.playbackControl.getPlayingIndex() == position) {
                 holder.art.setVisibility(View.VISIBLE);
             } else {
                 holder.art.setVisibility(View.INVISIBLE);
@@ -296,14 +298,6 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     }
 
 
-    @Override
-    public void playingIndexChange() {
-        turnOffPlayingView();
-        centerList(-1);
-        turnOnPlayingView();
-        loadAlbumArt();
-    }
-    
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
         if (android.os.Build.VERSION.SDK_INT < 5 && keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             onBackPressed();
@@ -316,6 +310,21 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     public void onBackPressed() {
            ((AmdroidActivityGroup) getParent()).setActivity(AmdroidActivityGroup.GOTO_HOME);
     }
+
+	@Override
+	public void onPlayingIndexChange()
+	{
+		turnOffPlayingView();
+        centerList(-1);
+        turnOnPlayingView();
+        loadAlbumArt();
+	}
+
+	@Override
+	public void onPlaylistCurrentChange()
+	{
+		pla.notifyDataSetChanged();
+	}
 
 
 }

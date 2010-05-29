@@ -43,11 +43,7 @@ public final class amdroid extends Application {
     public static ampacheCommunicator comm;
     public static ampacheRequestHandler requestHandler;
     public static SharedPreferences prefs;
-    public static ArrayList<Song> playlistCurrent;
     public static MediaPlayer mp;
-    private static int playingIndex;
-    public static IntegerNotifiable playingIndexNotifiable;
-    public static BaseAdapter playlistNotifiable;
     public static int bufferPC;
     public static Boolean playListVisible;
     public static Boolean confChanged;
@@ -91,8 +87,7 @@ public final class amdroid extends Application {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         mp = new MediaPlayer();
-
-        playingIndex = 0;
+        
         bufferPC = 0;
 
         cache = new Bundle();
@@ -109,7 +104,6 @@ public final class amdroid extends Application {
         } catch (Exception poo) {
             
         }
-        playlistCurrent = new ArrayList();
         playbackControl = new GlobalMediaPlayerControl();
         
     }
@@ -118,49 +112,5 @@ public final class amdroid extends Application {
         TelephonyManager tmgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         tmgr.listen(mPhoneStateListener, 0);
     }
-    
-    // functions to notify about playing index changes
-    public static void setPlayingIndex(int i){
-        playingIndex=i;
-        if (playingIndexNotifiable !=null)
-            playingIndexNotifiable.playingIndexChange();
-    }
-    
-    public static int getPlayingIndex(){
-        return playingIndex;
-    }
-    
-    public static void registerIntegerNotifiable(IntegerNotifiable n){
-        playingIndexNotifiable = n;
-    }
-    
-    public interface IntegerNotifiable {
-        public void playingIndexChange();
-    }
-    
- 
-    // functions used to notify about playing queue changes    
-    public static void registerBaseAdapterNotifiable(BaseAdapter ba){
-        playlistNotifiable=ba;
-    }
-    public static void notifyBaseAdapterChange(){
-        if (playlistNotifiable!=null)
-            playlistNotifiable.notifyDataSetChanged();
-    }
-    public static void addAllPlaylistCurrent(ArrayList s){
-        playlistCurrent.addAll(s);
-        notifyBaseAdapterChange();
-    }
-    public static void addPlaylistCurrent(Song s){
-        playlistCurrent.add(s);
-        notifyBaseAdapterChange();
-    }
-    public static void clearPlaylistCurrent(){
-        playlistCurrent.clear();
-        setPlayingIndex(0);
-        notifyBaseAdapterChange();
-    }
-    
-    
-   
+       
 }

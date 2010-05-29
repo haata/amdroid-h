@@ -69,7 +69,7 @@ public abstract class BaseActivity extends Activity implements OnItemClickListen
             return;
         if (val.getType().equals("Song")) {
             Toast.makeText(this, "Enqueue " + val.getType() + ": " + val.toString(), Toast.LENGTH_LONG).show();
-            amdroid.addPlaylistCurrent((Song) val);
+            amdroid.playbackControl.addPlaylistCurrent((Song) val);
             return;
         }
         directive[0] = val.childString();
@@ -90,7 +90,7 @@ public abstract class BaseActivity extends Activity implements OnItemClickListen
             requestMsg.replyTo = new Messenger(dataHandler);
             amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
         } else {
-            amdroid.addPlaylistCurrent((Song) cur);
+            amdroid.playbackControl.addPlaylistCurrent((Song) cur);
         }
         return true;
     }
@@ -205,7 +205,7 @@ public abstract class BaseActivity extends Activity implements OnItemClickListen
                 break;
             case (0x1339):
                 /* handle playlist enqueues */
-                amdroid.addAllPlaylistCurrent((ArrayList) msg.obj);
+                amdroid.playbackControl.addAllPlaylistCurrent((ArrayList) msg.obj);
                 break;
             }
 

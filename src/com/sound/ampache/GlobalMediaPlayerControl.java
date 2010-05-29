@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import android.util.Log;
-
 import com.sound.ampache.objects.Song;
 
 public class GlobalMediaPlayerControl {
@@ -12,13 +11,21 @@ public class GlobalMediaPlayerControl {
     public Boolean prepared = true;
     
     // Shuffle and repeat variables
-    public ArrayList shuffleHistory = new ArrayList();
+    public ArrayList<Integer> shuffleHistory = new ArrayList<Integer>();
     public boolean shuffleEnabled = false;
     public boolean repeatEnabled = false;
+    
+    // Playlist variables
+    private ArrayList<Song> playlistCurrent;
+    private PlaylistCurrentListener playlistCurrentListener;
+    private int playingIndex;
+    private PlayingIndexListener playingIndexListener;
 
 	public GlobalMediaPlayerControl()
 	{
 		amdroid.playListVisible = true;
+		playlistCurrent = new ArrayList<Song>();
+		playingIndex = 0;
 	}
 
     public int getCurrentPosition() {
@@ -65,19 +72,19 @@ public class GlobalMediaPlayerControl {
         // set to show that our mediaplayer has been initialized. 
         amdroid.mediaplayerInitialized = true;
         
-        if (amdroid.getPlayingIndex() >= amdroid.playlistCurrent.size()) {
-            amdroid.setPlayingIndex( amdroid.playlistCurrent.size() );
+        if (playingIndex >= playlistCurrent.size()) {
+            setPlayingIndex( playlistCurrent.size() );
             //mc.setEnabled(false);
             return;
         }
 
-        if (amdroid.getPlayingIndex() < 0) {
-            amdroid.setPlayingIndex(0);
+        if (playingIndex < 0) {
+            setPlayingIndex(0);
             //mc.setEnabled(false);
             return;
         }
 
-        Song chosen = (Song) amdroid.playlistCurrent.get(amdroid.getPlayingIndex());
+        Song chosen = (Song) playlistCurrent.get(playingIndex);
 
         if (amdroid.mp.isPlaying()) {
             amdroid.mp.stop();
@@ -107,37 +114,37 @@ public class GlobalMediaPlayerControl {
     public void nextInPlaylist() {
         if ( shuffleEnabled ) {
             // So we don't play a song more than once
-            if ( !shuffleHistory.contains( amdroid.getPlayingIndex() ) )
-                shuffleHistory.add( amdroid.getPlayingIndex() );
+            if ( !shuffleHistory.contains( playingIndex ) )
+                shuffleHistory.add( playingIndex );
 
             // Just played the last song, repeat if repeat is enabled, stop otherwise
-            if ( shuffleHistory.size() >= amdroid.playlistCurrent.size() && repeatEnabled )
+            if ( shuffleHistory.size() >= playlistCurrent.size() && repeatEnabled )
                 shuffleHistory.clear();
             else
-                amdroid.setPlayingIndex(amdroid.playlistCurrent.size());
+                setPlayingIndex(playlistCurrent.size());
 
             int next = 0;
             Random rand = new Random();
 
             // Try random numbers until finding one that is not used
             do {
-                next = rand.nextInt( amdroid.playlistCurrent.size() );
+                next = rand.nextInt( playlistCurrent.size() );
             } while ( shuffleHistory.contains( next ) );
 
             // Set next playing index
-            amdroid.setPlayingIndex(next);
+            setPlayingIndex(next);
         } else {
-            amdroid.setPlayingIndex(amdroid.getPlayingIndex()+1);
+            setPlayingIndex(playingIndex+1);
 
             // Reset playlist to beginning if repeat is enabled
-            if ( amdroid.getPlayingIndex() >= amdroid.playlistCurrent.size() && repeatEnabled )
-                amdroid.setPlayingIndex(0);
+            if ( playingIndex >= playlistCurrent.size() && repeatEnabled )
+                setPlayingIndex(0);
         }
     }
 
     public void prevInPlaylist() {
         if ( shuffleEnabled ) {
-            int currIndex = shuffleHistory.indexOf( amdroid.getPlayingIndex() );
+            int currIndex = shuffleHistory.indexOf( playingIndex );
 
             // Call a random next song if this is the first song
             if ( shuffleHistory.size() < 1 ) {
@@ -149,21 +156,77 @@ public class GlobalMediaPlayerControl {
             // Previous (Current item is not in the shuffle history)
             if ( currIndex == -1 ) {
                 // Set previous song
-                amdroid.setPlayingIndex( (Integer)shuffleHistory.get( shuffleHistory.size() - 1 ) );
+                setPlayingIndex( (Integer)shuffleHistory.get( shuffleHistory.size() - 1 ) );
 
                 // Remove item, I consider Previous like an undo
                 shuffleHistory.remove( shuffleHistory.size() - 1 );
             }
             // This shouldn't be possible, but...
             else if ( currIndex > 0 ) {
-                amdroid.setPlayingIndex( (Integer)shuffleHistory.get( currIndex - 1 ) );
+                setPlayingIndex( (Integer)shuffleHistory.get( currIndex - 1 ) );
 
                 shuffleHistory.remove( currIndex );
             }
         }
         // Do not call previous if it is the first song
-        else if ( amdroid.getPlayingIndex() > 0 )
-            amdroid.setPlayingIndex( amdroid.getPlayingIndex() -1 );
+        else if ( playingIndex > 0 )
+            setPlayingIndex( playingIndex -1 );
     }
+    
+    // Functions used to modify playingIndex and notify about changes
+    public void setPlayingIndex(int i){
+        playingIndex=i;
+        if (playingIndexListener !=null)
+            playingIndexListener.onPlayingIndexChange();
+    }
+    
+    public int getPlayingIndex(){
+        return playingIndex;
+    }
+    
+    public void setPlayingIndexListener(PlayingIndexListener listener){
+    	playingIndexListener = listener;
+    }
+    
+    // Functions used to modify playlistCurrent and notify about changes
+    public void setPlaylistCurrentListener(PlaylistCurrentListener listener){
+        playlistCurrentListener=listener;
+    }
+    public void addAllPlaylistCurrent(ArrayList<Song> songList){
+        playlistCurrent.addAll(songList);
+        if ( playlistCurrentListener != null )
+        	playlistCurrentListener.onPlaylistCurrentChange();
+    }
+    public void addPlaylistCurrent(Song song){
+        playlistCurrent.add(song);
+        if ( playlistCurrentListener != null )
+        	playlistCurrentListener.onPlaylistCurrentChange();
+    }
+    public void clearPlaylistCurrent(){
+        playlistCurrent.clear();
+        setPlayingIndex(0);
+        if ( playlistCurrentListener != null )
+        	playlistCurrentListener.onPlaylistCurrentChange();
+    }
+
+	/*
+	 * Changes should never be made directly on this object but instead via the functions supplied in
+	 * this class. Unless we want to make changes without calling the notifying functions. 
+	 */
+    public ArrayList<Song> getPlaylistCurrent(){
+    	return playlistCurrent;
+    }
+    
+    
+    /*
+     * Listener Interfaces
+     */
+	public interface PlayingIndexListener {
+		public void onPlayingIndexChange();
+	}
+
+	public interface PlaylistCurrentListener {
+		public void onPlaylistCurrentChange();
+	}
 
 }
