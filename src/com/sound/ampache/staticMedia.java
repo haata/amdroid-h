@@ -1,25 +1,26 @@
 package com.sound.ampache;
 
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.ImageButton;
-import android.widget.FrameLayout;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.content.Context;
-import android.view.View;
-import android.view.LayoutInflater;
-import android.view.KeyEvent;
-import android.os.Handler;
-import android.os.Message;
-
 import java.util.Formatter;
 import java.util.Locale;
 
-public final class staticMedia extends FrameLayout {
-    private MediaPlayerControl  mPlayer;
-    private View mRoot;
-    private Context mContext;
+import android.content.Context;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnBufferingUpdateListener;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.os.Handler;
+import android.os.Message;
+import android.util.AttributeSet;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
+import android.widget.SlidingDrawer;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+
+public final class staticMedia extends SlidingDrawer {
     private ProgressBar         mProgress;
     private TextView            mEndTime, mCurrentTime;
     private boolean             mDragging;
@@ -30,66 +31,235 @@ public final class staticMedia extends FrameLayout {
     private ImageButton mShuffleButton;
     private static final int    FADE_OUT = 1;
     private static final int    SHOW_PROGRESS = 2;
-    private boolean             mUseFastForward;
-    private boolean             mListenersSet;
-    private View.OnClickListener mNextListener, mPrevListener, mRepeatListener, mShuffleListener;
     StringBuilder               mFormatBuilder;
     Formatter                   mFormatter;
+    
+	/*
+	 * Listener variables for our buttons defined in the layout. The listeners are bound to their
+	 * buttons in initControllerView
+	 */
+	private View.OnClickListener mPauseListener = new View.OnClickListener() {
+		public void onClick( View view )
+		{
+			amdroid.playbackControl.doPauseResume();
+			//updatePausePlay();
+			show();
+		}
+	};
+	
+	private View.OnClickListener mNextListener = new View.OnClickListener() {
 
-    public staticMedia(Context context) {
-        super(context);
-        mContext = context;
+		@Override
+		public void onClick( View view )
+		{
+			amdroid.playbackControl.nextInPlaylist();
+			amdroid.playbackControl.play();
+		}
+		
+	};
+	
+	private View.OnClickListener mPrevListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick( View view )
+		{
+			amdroid.playbackControl.prevInPlaylist();
+			amdroid.playbackControl.play();
+		}
+		
+	};
+	
+	private View.OnClickListener mShuffleListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick( View view )
+		{
+			if ( amdroid.playbackControl.shuffleEnabled )
+			{
+				// Clean Shuffle History
+				amdroid.playbackControl.shuffleHistory.clear();
+				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_shuffle_disabled );
+				// Disable Shuffle
+				amdroid.playbackControl.shuffleEnabled = false;
+				Toast.makeText( getContext(), "Shuffle Disabled", Toast.LENGTH_SHORT ).show();
+			} else
+			{
+				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_shuffle );
+
+				// Enable Shuffle
+				amdroid.playbackControl.shuffleEnabled = true;
+				Toast.makeText( getContext(), "Shuffle Enabled", Toast.LENGTH_SHORT ).show();
+			}
+		}
+
+	};
+
+	private View.OnClickListener mRepeatListener = new View.OnClickListener() {
+
+		@Override
+		public void onClick( View view )
+		{
+			if ( amdroid.playbackControl.repeatEnabled )
+			{
+				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_revert_disabled );
+				// Disable Repeat
+				amdroid.playbackControl.repeatEnabled = false;
+				Toast.makeText( getContext(), "Repeat Disabled", Toast.LENGTH_SHORT ).show();
+			} else
+			{
+				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_revert );
+				// Enable Repeat
+				amdroid.playbackControl.repeatEnabled = true;
+				Toast.makeText( getContext(), "Repeat Enabled", Toast.LENGTH_SHORT ).show();
+			}
+		}
+
+	};
+
+	/*
+	 * Listener to respond to changes made to the seekbar.
+	 */
+	private OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
+		long duration;
+
+		public void onStartTrackingTouch( SeekBar bar )
+		{
+			duration = amdroid.playbackControl.getDuration();
+		}
+
+		public void onProgressChanged( SeekBar bar, int progress, boolean fromtouch )
+		{
+			if ( fromtouch )
+			{
+				mDragging = true;
+				long newposition = ( duration * progress ) / 1000L;
+				amdroid.playbackControl.seekTo( (int)newposition );
+				if ( mCurrentTime != null )
+					mCurrentTime.setText( stringForTime( (int)newposition ) );
+			}
+		}
+
+		public void onStopTrackingTouch( SeekBar bar )
+		{
+			mDragging = false;
+			setProgress();
+			updatePausePlay();
+		}
+	};
+
+	/* 
+	 * Handler variable for handling messages to show playback progress 
+	 */	
+	private Handler mHandler = new Handler() {
+		@Override
+		public void handleMessage( Message msg )
+		{
+			int pos;
+			switch (msg.what) {
+			case SHOW_PROGRESS:
+				pos = setProgress();
+				if ( !mDragging && amdroid.playbackControl.isPlaying() )
+				{
+					msg = obtainMessage( SHOW_PROGRESS );
+					sendMessageDelayed( msg, 1000 - ( pos % 1000 ) );
+				}
+				break;
+			}
+		}
+	};
+	
+	/*
+	 * Completion, buffering and prepared listener that is bound to our mediaPlayer object
+	 */
+	private OnCompletionListener mCompletionListener = new OnCompletionListener() {
+
+		@Override
+		public void onCompletion( MediaPlayer mp )
+		{
+	        amdroid.playbackControl.nextInPlaylist();
+	        amdroid.playbackControl.play(); 
+		}
+		
+	};
+	
+	private OnBufferingUpdateListener mBufferingUpdateListener = new OnBufferingUpdateListener() {
+
+		@Override
+		public void onBufferingUpdate( MediaPlayer mp, int percent )
+		{
+			amdroid.bufferPC = percent;
+		}
+		
+	};
+	
+	private MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
+		public void onPrepared( MediaPlayer mp )
+		{
+			amdroid.playbackControl.start();
+			if ( amdroid.playListVisible )
+			{
+				// mc.setEnabled(true);
+				show();
+				amdroid.playbackControl.prepared = true;
+			}
+		}
+	};
+
+	/* 
+	 * Constructor and initialization functions
+	 */
+    public staticMedia(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
-
-    private void initFloatingWindow() {
-
+    
+    public void onFinishInflate(){
+    	super.onFinishInflate();
+    	amdroid.mp.setOnCompletionListener( mCompletionListener );
+    	amdroid.mp.setOnPreparedListener( mPreparedListener );
+    	amdroid.mp.setOnBufferingUpdateListener( mBufferingUpdateListener );
+    	initControllerView();
     }
+    
 
-    public View getController() {
-        if (mRoot == null) {
-            mRoot = makeControllerView();
-        }
-        return mRoot;
-    }
-
-    public void setMediaPlayer(MediaPlayerControl player) {
-        mPlayer = player;
-        updatePausePlay();
-    }
-
-    protected View makeControllerView() {
-        LayoutInflater inflate = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mRoot = inflate.inflate(R.layout.my_media, null);
-        initControllerView(mRoot);
-        return mRoot;
-    }
-
-    private void initControllerView(View v) {
-        mPauseButton = (ImageButton) v.findViewById(R.id.pause);
+    /* 
+     * Functions
+     */
+    private void initControllerView() {
+    	// Bind listeners to our components
+        mPauseButton = (ImageButton) findViewById(R.id.pause);
         if (mPauseButton != null) {
-            mPauseButton.requestFocus();
             mPauseButton.setOnClickListener(mPauseListener);
         }
+        
+        mNextButton = (ImageButton) findViewById(R.id.next);
+        if (mNextButton != null) {
+            mNextButton.setOnClickListener(mNextListener);
+        }
+        
+        mPrevButton = (ImageButton) findViewById(R.id.prev);
+        if (mPrevButton != null) {
+            mPrevButton.setOnClickListener(mPrevListener);
+        }
+        
+        mRepeatButton = (ImageButton) findViewById(R.id.repeat);
+        if (mRepeatButton != null) {
+			mRepeatButton.setOnClickListener( mRepeatListener );
+			if ( amdroid.playbackControl.repeatEnabled )
+				mRepeatButton.setImageResource( R.drawable.ic_menu_revert );
+			else
+				mRepeatButton.setImageResource( R.drawable.ic_menu_revert_disabled );
+		}
+        
+        mShuffleButton = (ImageButton) findViewById(R.id.shuffle);
+        if (mShuffleButton != null) {
+            mShuffleButton.setOnClickListener(mShuffleListener);
+            if ( amdroid.playbackControl.shuffleEnabled )
+            	mShuffleButton.setImageResource( R.drawable.ic_menu_shuffle );
+            else
+            	mShuffleButton.setImageResource( R.drawable.ic_menu_shuffle_disabled );
+        }
 
-        // By default these are hidden. They will be enabled when setPrevNextListeners() is called 
-        mNextButton = (ImageButton) v.findViewById(R.id.next);
-        if (mNextButton != null && !mListenersSet) {
-            mNextButton.setVisibility(View.GONE);
-        }
-        mPrevButton = (ImageButton) v.findViewById(R.id.prev);
-        if (mPrevButton != null && !mListenersSet) {
-            mPrevButton.setVisibility(View.GONE);
-        }
-        mRepeatButton = (ImageButton) v.findViewById(R.id.repeat);
-        if (mRepeatButton != null && !mListenersSet) {
-            mRepeatButton.setVisibility(View.GONE);
-        }
-        mShuffleButton = (ImageButton) v.findViewById(R.id.shuffle);
-        if (mShuffleButton != null && !mListenersSet) {
-            mRepeatButton.setVisibility(View.GONE);
-        }
-
-        mProgress = (ProgressBar) v.findViewById(R.id.mediacontroller_progress);
+        mProgress = (ProgressBar) findViewById(R.id.mediacontroller_progress);
         if (mProgress != null) {
             if (mProgress instanceof SeekBar) {
                 SeekBar seeker = (SeekBar) mProgress;
@@ -98,12 +268,11 @@ public final class staticMedia extends FrameLayout {
             mProgress.setMax(1000);
         }
 
-        mEndTime = (TextView) v.findViewById(R.id.time);
-        mCurrentTime = (TextView) v.findViewById(R.id.time_current);
+        mEndTime = (TextView) findViewById(R.id.time);
+        mCurrentTime = (TextView) findViewById(R.id.time_current);
         mFormatBuilder = new StringBuilder();
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-
-        installPrevNextListeners();
+        show();
     }
 
     public void show() {
@@ -114,22 +283,6 @@ public final class staticMedia extends FrameLayout {
     public void hide() {
         mHandler.removeMessages(SHOW_PROGRESS);
     }
-
-    private Handler mHandler = new Handler() {
-        @Override
-            public void handleMessage(Message msg) {
-            int pos;
-            switch (msg.what) {
-            case SHOW_PROGRESS:
-                pos = setProgress();
-                if (!mDragging && mPlayer.isPlaying()) {
-                    msg = obtainMessage(SHOW_PROGRESS);
-                    sendMessageDelayed(msg, 1000 - (pos % 1000));
-                }
-                break;
-            }
-        }
-        };
 
     private String stringForTime(int timeMs) {
         int totalSeconds = timeMs / 1000;
@@ -147,18 +300,18 @@ public final class staticMedia extends FrameLayout {
     }
 
     private int setProgress() {
-        if (mPlayer == null || mDragging) {
+        if (mDragging) {
             return 0;
         }
-        int position = mPlayer.getCurrentPosition();
-        int duration = mPlayer.getDuration();
+        int position = amdroid.playbackControl.getCurrentPosition();
+        int duration = amdroid.playbackControl.getDuration();
         if (mProgress != null) {
             if (duration > 0) {
                 // use long to avoid overflow
                 long pos = 1000L * position / duration;
                 mProgress.setProgress( (int) pos);
             }
-            int percent = mPlayer.getBufferPercentage();
+            int percent = amdroid.bufferPC;
             mProgress.setSecondaryProgress(percent * 10);
         }
 
@@ -170,72 +323,35 @@ public final class staticMedia extends FrameLayout {
         return position;
     }
 
-    @Override
-        public boolean dispatchKeyEvent(KeyEvent event) {
-        int keyCode = event.getKeyCode();
-        if (event.getRepeatCount() == 0 && (
-                keyCode ==  KeyEvent.KEYCODE_HEADSETHOOK ||
-                keyCode ==  KeyEvent.KEYCODE_SPACE)) {
-            doPauseResume();
-            return true;
-        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-                   keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            // don't show the controls for volume adjustment
-            return super.dispatchKeyEvent(event);
-        }
-        return super.dispatchKeyEvent(event);
-    }
-
-    private View.OnClickListener mPauseListener = new View.OnClickListener() {
-            public void onClick(View v) {
-                doPauseResume();
-            }
-        };
-
     private void updatePausePlay() {
-        if (mRoot == null)
-            return;
-
-        ImageButton button = (ImageButton) mRoot.findViewById(R.id.pause);
+        ImageButton button = (ImageButton) findViewById(R.id.pause);
         if (button == null)
             return;
 
-        if (mPlayer.isPlaying()) {
+        if (amdroid.playbackControl.isPlaying()) {
             button.setImageResource(android.R.drawable.ic_media_pause);
         } else {
             button.setImageResource(android.R.drawable.ic_media_play);
         }
     }
-
-    private void doPauseResume() {
-        if (mPlayer.isPlaying()) {
-            mPlayer.pause();
-        } else {
-            mPlayer.start();
-        }
-        updatePausePlay();
-    }
-
-    private OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
-            long duration;
-            public void onStartTrackingTouch(SeekBar bar) {
-                duration = mPlayer.getDuration();
-            }
-            public void onProgressChanged(SeekBar bar, int progress, boolean fromtouch) {
-                if (fromtouch) {
-                    mDragging = true;
-                    long newposition = (duration * progress) / 1000L;
-                    mPlayer.seekTo( (int) newposition);
-                    if (mCurrentTime != null)
-                        mCurrentTime.setText(stringForTime( (int) newposition));
-                }
-            }
-            public void onStopTrackingTouch(SeekBar bar) {
-                mDragging = false;
-                setProgress();
-                updatePausePlay();
-            }
-        };
+    
+	@Override
+	public boolean dispatchKeyEvent( KeyEvent event )
+	{
+		int keyCode = event.getKeyCode();
+		if ( event.getRepeatCount() == 0
+				&& ( keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_SPACE ) )
+		{
+			amdroid.playbackControl.doPauseResume();
+			return true;
+		} else if ( keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+				|| keyCode == KeyEvent.KEYCODE_VOLUME_UP )
+		{
+			// don't show the controls for volume adjustment
+			return super.dispatchKeyEvent( event );
+		}
+		return super.dispatchKeyEvent( event );
+	}
 
     @Override
     public void setEnabled(boolean enabled) {
@@ -260,64 +376,6 @@ public final class staticMedia extends FrameLayout {
 
         super.setEnabled(enabled);
     }
-
-    private void installPrevNextListeners() {
-        if (mNextButton != null) {
-            mNextButton.setOnClickListener(mNextListener);
-            mNextButton.setEnabled(mNextListener != null);
-        }
-
-        if (mPrevButton != null) {
-            mPrevButton.setOnClickListener(mPrevListener);
-            mPrevButton.setEnabled(mPrevListener != null);
-        }
-        
-        if (mRepeatButton != null) {
-            mRepeatButton.setOnClickListener(mRepeatListener);
-            mRepeatButton.setEnabled(mRepeatListener != null);
-        }
-        
-        if (mShuffleButton != null) {
-            mShuffleButton.setOnClickListener(mShuffleListener);
-            mShuffleButton.setEnabled(mShuffleListener != null);
-        }
-    }
-
-    public void setPrevNextListeners(View.OnClickListener next, View.OnClickListener prev,
-            View.OnClickListener repeat, View.OnClickListener shuffle) {
-        mNextListener = next;
-        mPrevListener = prev;
-        mRepeatListener = repeat;
-        mShuffleListener = shuffle;
-        mListenersSet = true;
-
-        if (mRoot != null) {
-            installPrevNextListeners();
-            
-            if (mNextButton != null) {
-                mNextButton.setVisibility(View.VISIBLE);
-            }
-            if (mPrevButton != null) {
-                mPrevButton.setVisibility(View.VISIBLE);
-            }
-            if (mRepeatButton != null) {
-                mRepeatButton.setVisibility(View.VISIBLE);
-            }
-            if (mShuffleButton != null) {
-                mShuffleButton.setVisibility(View.VISIBLE);
-            }
-        }
-    }
-
-
-    public interface MediaPlayerControl {
-        void    start();
-        void    pause();
-        int     getDuration();
-        int     getCurrentPosition();
-        void    seekTo(int pos);
-        boolean isPlaying();
-        int     getBufferPercentage();
-    };
+    
 
 }

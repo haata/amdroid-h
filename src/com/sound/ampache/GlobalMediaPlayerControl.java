@@ -3,85 +3,23 @@ package com.sound.ampache;
 import java.util.ArrayList;
 import java.util.Random;
 
-import android.content.Context;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnBufferingUpdateListener;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.SlidingDrawer;
-import android.widget.Toast;
-import android.widget.SlidingDrawer.OnDrawerCloseListener;
-import android.widget.SlidingDrawer.OnDrawerOpenListener;
 
 import com.sound.ampache.objects.Song;
-import com.sound.ampache.staticMedia.MediaPlayerControl;
 
-public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlayerControl, 
-    OnBufferingUpdateListener, OnCompletionListener, OnClickListener {
-    
-    private staticMedia mc;
+public class GlobalMediaPlayerControl {
+
     public Boolean prepared = true;
-    private static GlobalMediaPlayerControl mpc = null;
-    
     
     // Shuffle and repeat variables
-    private ArrayList shuffleHistory = new ArrayList();
-    private boolean shuffleEnabled = false;
-    private boolean repeatEnabled = false;
+    public ArrayList shuffleHistory = new ArrayList();
+    public boolean shuffleEnabled = false;
+    public boolean repeatEnabled = false;
 
-    public GlobalMediaPlayerControl(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-    
-    public void onFinishInflate(){
-        super.onFinishInflate();
-        /*  Populate the drawer_view with our staticMedia class. */
-        
-        mc = new staticMedia(getContext());
-
-        amdroid.mp.setOnBufferingUpdateListener(this);
-        amdroid.mp.setOnCompletionListener(this);
-        amdroid.playListVisible = true;
-        
-        amdroid.mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            public void onPrepared(MediaPlayer mp) {
-                amdroid.mp.start();
-                if (amdroid.playListVisible) {
-                    mc.setEnabled(true);
-                    mc.show();
-                    prepared = true;
-                }
-            }});
-        
-        LinearLayout l = (LinearLayout) this.getContent();
-        l.addView(mc.getController());
-        mc.setMediaPlayer(this);
-        
-        mc.setEnabled(true);
-        mc.show();
-        
-        mc.setPrevNextListeners(this, this, this, this);
-        
-        mpc=this;
-    }
-    
-    public static GlobalMediaPlayerControl getMpc(){
-        return mpc;
-    }
-    
-    /*  callbacks for the MediaPlayer and MediaController */
-    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        amdroid.bufferPC = percent;
-    }
-
-    public int getBufferPercentage() {
-        return amdroid.bufferPC;
-    }
+	public GlobalMediaPlayerControl()
+	{
+		amdroid.playListVisible = true;
+	}
 
     public int getCurrentPosition() {
         if (amdroid.mp.isPlaying()) {
@@ -113,19 +51,19 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
         }
     }
 
-    public void start() {
-        // If current position i s 0 or below we have never played a song and play should be run
-        if (!amdroid.mpInit) {
-            play();
-            return;
-        }
-        amdroid.mp.start();
-    }
+	public void start()
+	{
+		if ( !amdroid.mediaplayerInitialized )
+			play();
+
+		else
+			amdroid.mp.start();
+	}
 
     public void play() {
         
-        //  set to show that our mediaplayer has been initialized. 
-        amdroid.mpInit = true;
+        // set to show that our mediaplayer has been initialized. 
+        amdroid.mediaplayerInitialized = true;
         
         if (amdroid.getPlayingIndex() >= amdroid.playlistCurrent.size()) {
             amdroid.setPlayingIndex( amdroid.playlistCurrent.size() );
@@ -146,8 +84,6 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
         }
 
         amdroid.mp.reset();
-        /*  Disabling mediacontroller while preparing */
-        mc.setEnabled(false);
         try {
             Log.i("Amdroid", "Song URL     - " + chosen.url );
             Log.i("Amdroid", "Song URL (C) - " + chosen.liveUrl() );
@@ -155,21 +91,20 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
             amdroid.mp.prepareAsync();
             prepared = false;
         } catch (Exception blah) {
-            /*  Enabling staticMedia so we don't lock for ever incase of exception */
-            mc.setEnabled(true);
             Log.i("Amdroid", "Tried to get the song but couldn't...sorry D:");
             return;
         }
-        //turnOnPlayingView();
-    }
-
-    @Override
-    public void onCompletion(MediaPlayer mp) {
-        nextInPlaylist();
-        play();       
     }
     
-    private void nextInPlaylist() {
+    public void doPauseResume() {
+        if (isPlaying()) {
+            pause();
+        } else {
+            start();
+        }
+    }
+   
+    public void nextInPlaylist() {
         if ( shuffleEnabled ) {
             // So we don't play a song more than once
             if ( !shuffleHistory.contains( amdroid.getPlayingIndex() ) )
@@ -200,7 +135,7 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
         }
     }
 
-    private void prevInPlaylist() {
+    public void prevInPlaylist() {
         if ( shuffleEnabled ) {
             int currIndex = shuffleHistory.indexOf( amdroid.getPlayingIndex() );
 
@@ -231,47 +166,4 @@ public class GlobalMediaPlayerControl extends SlidingDrawer implements MediaPlay
             amdroid.setPlayingIndex( amdroid.getPlayingIndex() -1 );
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-        case (R.id.next):
-            nextInPlaylist();
-            play();
-            break;
-        case (R.id.prev):
-            prevInPlaylist();
-            play();
-            break;
-        case (R.id.repeat):
-            if (repeatEnabled) {
-                ((ImageButton) v).setImageResource(R.drawable.ic_menu_revert_disabled);
-                // Disable Repeat
-                repeatEnabled = false;
-                Toast.makeText(getContext(), "Repeat Disabled", Toast.LENGTH_SHORT).show();
-            } else {
-                ((ImageButton) v).setImageResource(R.drawable.ic_menu_revert);
-                // Enable Repeat
-                repeatEnabled = true;
-                Toast.makeText(getContext(), "Repeat Enabled", Toast.LENGTH_SHORT).show();
-            }
-            break;
-        case (R.id.shuffle):
-            if (shuffleEnabled) {
-                // Clean Shuffle History
-                shuffleHistory.clear();
-                ((ImageButton) v).setImageResource(R.drawable.ic_menu_shuffle_disabled);
-                // Disable Shuffle
-                shuffleEnabled = false;
-                Toast.makeText(getContext(), "Shuffle Disabled", Toast.LENGTH_SHORT).show();
-            } else {
-                ((ImageButton) v).setImageResource(R.drawable.ic_menu_shuffle);
-
-                // Enable Shuffle
-                shuffleEnabled = true;
-                Toast.makeText(getContext(), "Shuffle Enabled", Toast.LENGTH_SHORT).show();
-            }
-            break;
-        }
-
-    }
 }

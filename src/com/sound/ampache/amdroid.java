@@ -53,8 +53,11 @@ public final class amdroid extends Application {
     public static Boolean confChanged;
     protected static Bundle cache;
     private static Boolean mResumeAfterCall = false;
+    public static GlobalMediaPlayerControl playbackControl;
     
-    public static boolean mpInit = false; 
+	// This variable should be set to true once the mediaplayer object has been initialized. I.e. a
+	// data source has been set and is prepared. 
+	public static boolean mediaplayerInitialized = false;
 
     //Handle phone calls
     private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
@@ -107,6 +110,8 @@ public final class amdroid extends Application {
             
         }
         playlistCurrent = new ArrayList();
+        playbackControl = new GlobalMediaPlayerControl();
+        
     }
 
     public void onDestroy() {

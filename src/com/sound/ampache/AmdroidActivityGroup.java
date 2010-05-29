@@ -30,7 +30,7 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
     private FrameLayout activityFrame;
     // Re-usable intent for all our activities
     private Intent intent;
-    private GlobalMediaPlayerControl globalPlay;
+    private staticMedia mStaticMedia;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,7 +53,7 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         
         localActivityManager = getLocalActivityManager();
         activityFrame = (FrameLayout) findViewById(R.id.activity_frame);
-        globalPlay = (GlobalMediaPlayerControl) findViewById(R.id.drawer);
+        mStaticMedia = (staticMedia) findViewById(R.id.static_media);
         
         /*  re-usable intent for switching between activities */
         intent = new Intent();
@@ -79,7 +79,7 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         activityFrame.removeAllViews();
         activityFrame.addView(v);
         /* Always keep our SlidingDrawer on top */
-        globalPlay.bringToFront();
+        mStaticMedia.bringToFront();
     }
     
 
@@ -168,6 +168,11 @@ public class AmdroidActivityGroup extends ActivityGroup implements OnClickListen
         else
             finish();
     }
+    
+	public void onDestroy()
+	{
+		super.onDestroy();
+	}
     
 }
 

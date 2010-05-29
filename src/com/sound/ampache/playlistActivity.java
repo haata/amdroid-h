@@ -62,8 +62,6 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     private playlistAdapter pla;
 
     private Boolean albumArtEnabled = false;
-    
-    private GlobalMediaPlayerControl gmpc = null;
 
     public void onCreate(Bundle savedInstanceState)
     {
@@ -94,8 +92,6 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         // Center the playlist at the current song
         centerList( 0 );
         
-        // Get reference to our mediaplayercontrol
-        gmpc = GlobalMediaPlayerControl.getMpc();
     }
 
     @Override
@@ -110,7 +106,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.pl_clear:
-            if (gmpc.isPlaying())
+            if (amdroid.playbackControl.isPlaying())
                 amdroid.mp.stop();
             amdroid.setPlayingIndex(0);
             pla.clearItems();
@@ -128,7 +124,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
             break;
 
         case R.id.pl_load:
-            if (gmpc.isPlaying())
+            if (amdroid.playbackControl.isPlaying())
                 amdroid.mp.stop();
             amdroid.setPlayingIndex(0);
             //mc.setEnabled(false);
@@ -222,9 +218,9 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
     @Override
     public void onItemClick(AdapterView l, View v, int position, long id) {
-        if (gmpc.prepared) {
+        if (amdroid.playbackControl.prepared) {
             amdroid.setPlayingIndex(position);
-            gmpc.play();
+            amdroid.playbackControl.play();
         }
     }
 
