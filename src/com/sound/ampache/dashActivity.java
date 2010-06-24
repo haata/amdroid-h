@@ -42,7 +42,7 @@ public class dashActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dashactivity_layout);
+        setContentView(R.layout.dash_activity);
 
         lv = (ListView) findViewById(R.id.recently_played_songs);
         lv.setAdapter(new ArrayAdapter(this, R.layout.list_item_music_root , songs));

@@ -39,9 +39,14 @@
 		
 	</LinearLayout>
 
+	<include layout="@layout/activity_header" />
 
-	<ListView android:id="@+id/search_list" 
-		android:layout_width="fill_parent"
+	<com.sound.ampache.AmpacheListView android:id="@id/android:list"
+		android:layout_width="fill_parent" 
 		android:layout_height="fill_parent" />
+		
+	<TextView android:id="@id/android:empty"
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent" />
 
 </LinearLayout>

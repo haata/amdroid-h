@@ -145,7 +145,7 @@ public class ampacheCommunicator
                         String append = "";
                         boolean goodcache = false;
                         String error = null;
-                        Message reply = new Message();
+                        Message reply = this.obtainMessage();
                         ArrayList<ampacheObject> goods = null;
                         InputSource dataIn = null;
                         
@@ -188,7 +188,7 @@ public class ampacheCommunicator
                             return; // new ArrayList();
                         }
                         
-                        if (msg.what == 0x1336) {
+                        if (msg.what == 0x1336 || msg.what == 0x1337) {
                             append += "&offset=" + msg.arg1 + "&limit=100";
                             reply.arg1 = msg.arg1;
                             reply.arg2 = msg.arg2;

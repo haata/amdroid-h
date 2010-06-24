@@ -2,105 +2,135 @@ package com.sound.ampache;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
+import com.sound.ampache.AmpacheListView.IsFetchingListener;
+
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.Messenger;
+import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.AdapterView.OnItemClickListener;
 
-public class BrowseActivity extends BaseActivity {
+public class BrowseActivity extends Activity implements OnItemClickListener, IsFetchingListener {
+
+	// Root list and adapter. This is only used to display the root options.
+	private ListView emptyListView;
+	private ArrayList<String> emptyList = new ArrayList<String>( Arrays.asList( new String[] {
+			"Artists", "Albums", "Tags" } ) );
+	private ArrayAdapter<String> emptyListAdapter;
+
+	private AmpacheListView ampacheListView;
+	
+	private ProgressBar progressBar;
+	private TextView headerTextView;
+
+	/** Called when the activity is first created. */
+	@Override
+	public void onCreate( Bundle savedInstanceState )
+	{
+		super.onCreate( savedInstanceState );
+		setContentView( R.layout.browse_activity );
+
+		emptyListAdapter = new ArrayAdapter<String>( this, R.layout.list_item_music_root, emptyList );
+		emptyListView = (ListView)findViewById( android.R.id.empty );
+		emptyListView.setAdapter( emptyListAdapter );
+		emptyListView.setOnItemClickListener( this );
+
+		ampacheListView = (AmpacheListView)findViewById( android.R.id.list );
+		ampacheListView.setFastScrollEnabled( true );
+		ampacheListView.setEmptyView( emptyListView );
+		ampacheListView.setHeaderDividersEnabled( true );
+		ampacheListView.setIsFetchingListener( this );
+		
+		progressBar = (ProgressBar)findViewById(R.id.progress_bar);
+		progressBar.setIndeterminate( true );
+		progressBar.setVisibility( View.INVISIBLE );
+		headerTextView = (TextView)findViewById(R.id.text_view);
+		headerTextView.setText( "Music" );
+		
+	}
+
+	@Override
+	public void onItemClick( AdapterView<?> adapterView, View view, int position, long arg3 )
+	{
+		String value;
+		value = (String)adapterView.getItemAtPosition( position );
+		value = value.toLowerCase();
+
+		String[] directive = new String[3];
+		directive[0] = value;
+		directive[1] = "";
+		directive[2] = value;
+		
+		emptyListView.setVisibility( View.GONE );
+
+		ampacheListView.mDataHandler.enqueMessage( 0x1336, directive, 0, true );
+
+	}
+
+	@Override
+	public void onIsFetchingChange( boolean isFetching )
+	{
+		if (isFetching) {
+			progressBar.setVisibility( View.VISIBLE );
+		}
+		else {
+			progressBar.setVisibility( View.INVISIBLE );
+		}
+		
+		updateHeaderTextView();
+		
+	}
+
+	private void updateHeaderTextView()
+	{
+		String append = "Music";
+		LinkedList<String[]> history = ampacheListView.getHistory();
+
+		ListIterator<String[]> itr = history.listIterator();
+	    while(itr.hasNext())
+	    {
+	      append += "/"+itr.next()[2];
+	    }
+	    
+	    headerTextView.setText( append );
+	}
+	
+    /*
+     * Override "back button" behavior on android 1.6
+     */
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+            // Take care of calling this method on earlier versions of
+            // the platform where it doesn't exist.
+            return ampacheListView.backPressed();
+        }
+
+        return false;
+    }
     
-    //Root list and adapter. This is only used to display the root options. 
-    private ArrayList<String> root = new ArrayList<String>(Arrays.asList(new String[]{"Artists", "Albums", "Tags"}));
-    private ArrayAdapter<String> rootAdapter;
-    
-    /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.browseactivity_layout);       
-        
-        rootAdapter = new ArrayAdapter<String>(this, R.layout.list_item_music_root , root);
-        
-        lv = (ListView) findViewById(R.id.browse_music_list);
-        
-        lv.setFastScrollEnabled(true);
-        lv.setOnItemClickListener(this);
-        lv.setOnItemLongClickListener(this);
-        
-        directive = new String[2];
-        directive[0] = "root";
-        directive[1] = "";
-        
-        updateList(true);
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        return false;
     }
 
     /*
-     *  Need to override these functions to cope with the "rootList". I.e. display "Artist" "Album" "Tags"
-     */
-    @Override
-    public void onItemClick(AdapterView<?> adapterView, View view, int position, long arg3) {
-        if (history.getLast()[0].equals("root")) {
-            directive[0] = (String) adapterView.getItemAtPosition(position);
-            directive[1] = "";
-            updateList(true);
-        }
-        else
-            super.onItemClick(adapterView, view, position, arg3);
-    }
-    
-    public boolean onItemLongClick(AdapterView l, View v, int position, long id) {
-        if (history.getLast()[0].equals("root"))
-            return true;
-
-        return super.onItemLongClick(l, v, position, id);
-    }
-
-    public void updateList(boolean setHistory) {
-
-        if (directive[0].equals("root")) {
-            lv.setAdapter(rootAdapter);
-
-        } else {
-            dataHandler.stop = true;
-            dataHandler.removeMessages(0x1336);
-            dataHandler.removeMessages(0x1337);
-            dataHandler = new DataHandler();
-
-            Message requestMsg = new Message();
-
-            requestMsg.arg1 = 0;
-            requestMsg.what = 0x1336;
-
-            if (directive[0].equalsIgnoreCase("Artists")) {
-                directive[0] = "artists";
-                requestMsg.arg2 = amdroid.comm.artists;
-            } else if (directive[0].equalsIgnoreCase("Albums")) {
-                directive[0] = "albums";
-                requestMsg.arg2 = amdroid.comm.albums;
-            } else if (directive[0].equalsIgnoreCase("Tags")) {
-                directive[0] = "tags";
-                requestMsg.what = 0x1337;
-            } else {
-                requestMsg.what = 0x1337;
-            }
-
-            if (lv.getAdapter() != listAdapter)
-                lv.setAdapter(listAdapter);
-            listAdapter.clear();
-
-            requestMsg.obj = directive;
-
-            requestMsg.replyTo = new Messenger(dataHandler);
-            amdroid.requestHandler.incomingRequestHandler.sendMessage(requestMsg);
-        }
-
-        if (setHistory)
-            history.add(directive.clone());
-
-    }
+     * Override "back button" behavior on android 2.0 and later
+     *
+    public void onBackPressed() {
+        ampacheListView.backPressed();
+    }*/
 
 }

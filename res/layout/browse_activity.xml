@@ -5,8 +5,14 @@
 	android:layout_width="fill_parent" 
 	android:layout_height="fill_parent">
 	
-	<ListView android:id="@+id/browse_music_list"
+	<include layout="@layout/activity_header" />
+	
+	<com.sound.ampache.AmpacheListView android:id="@id/android:list"
 		android:layout_width="fill_parent" 
 		android:layout_height="fill_parent" />
+		
+	<ListView android:id="@id/android:empty"
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent" />
 	
 </LinearLayout>

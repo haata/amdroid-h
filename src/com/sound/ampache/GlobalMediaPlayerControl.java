@@ -210,8 +210,9 @@ public class GlobalMediaPlayerControl {
     }
 
 	/*
-	 * Changes should never be made directly on this object but instead via the functions supplied in
-	 * this class. Unless we want to make changes without calling the notifying functions. 
+	 * Changes should never be made directly on the returned object but instead via the functions
+	 * supplied in this class. Unless we want to make changes without calling the notifying
+	 * functions.
 	 */
     public ArrayList<Song> getPlaylistCurrent(){
     	return playlistCurrent;
