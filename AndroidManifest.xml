@@ -7,7 +7,7 @@
   <uses-permission android:name="android.permission.INTERNET" />
   <application android:label="@string/app_name"
                android:name="amdroid" 
-               android:icon="@drawable/amdroid_logo">
+               android:icon="@drawable/amdroid_icon">
     <!-- Activity Group -->
     <activity android:name=".AmdroidActivityGroup" 
     android:theme="@android:style/Theme.NoTitleBar" >
