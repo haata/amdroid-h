@@ -1,6 +1,7 @@
 package com.sound.ampache.objects;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -20,7 +21,6 @@ package com.sound.ampache.objects;
  * +------------------------------------------------------------------------+
  */
 
-import java.util.ArrayList;
 import android.os.Parcelable;
 import android.os.Parcel;
 
@@ -70,8 +70,8 @@ public class Playlist extends ampacheObject {
         extra = in.readString();
     }
 
-    public static final Parcelable.Creator CREATOR
-        = new Parcelable.Creator() {
+    public static final Parcelable.Creator<Playlist> CREATOR
+        = new Parcelable.Creator<Playlist>() {
                 public Playlist createFromParcel(Parcel in) {
                     return new Playlist(in);
                 }

@@ -1,5 +1,27 @@
 package com.sound.ampache;
 
+/* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+ * Copyright (c) 2010 Kristopher Heijari < iix.ftw@gmail.com >
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
+ *
+ * +------------------------------------------------------------------------+
+ * | This program is free software; you can redistribute it and/or          |
+ * | modify it under the terms of the GNU General Public License            |
+ * | as published by the Free Software Foundation; either version 2         |
+ * | of the License, or (at your option) any later version.                 |
+ * |                                                                        |
+ * | This program is distributed in the hope that it will be useful,        |
+ * | but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+ * | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+ * | GNU General Public License for more details.                           |
+ * |                                                                        |
+ * | You should have received a copy of the GNU General Public License      |
+ * | along with this program; if not, write to the Free Software            |
+ * | Foundation, Inc., 59 Temple Place - Suite 330,                         |
+ * | Boston, MA  02111-1307, USA.                                           |
+ * +------------------------------------------------------------------------+
+ */
+
 import java.util.Formatter;
 import java.util.Locale;
 
@@ -39,6 +61,7 @@ public final class staticMedia extends SlidingDrawer {
 	 * buttons in initControllerView
 	 */
 	private View.OnClickListener mPauseListener = new View.OnClickListener() {
+		@Override
 		public void onClick( View view )
 		{
 			amdroid.playbackControl.doPauseResume();
@@ -48,7 +71,6 @@ public final class staticMedia extends SlidingDrawer {
 	};
 	
 	private View.OnClickListener mNextListener = new View.OnClickListener() {
-
 		@Override
 		public void onClick( View view )
 		{
@@ -59,7 +81,6 @@ public final class staticMedia extends SlidingDrawer {
 	};
 	
 	private View.OnClickListener mPrevListener = new View.OnClickListener() {
-
 		@Override
 		public void onClick( View view )
 		{
@@ -70,24 +91,21 @@ public final class staticMedia extends SlidingDrawer {
 	};
 	
 	private View.OnClickListener mShuffleListener = new View.OnClickListener() {
-
 		@Override
 		public void onClick( View view )
 		{
-			if ( amdroid.playbackControl.shuffleEnabled )
+			if ( amdroid.playbackControl.shuffleEnabled() )
 			{
-				// Clean Shuffle History
-				amdroid.playbackControl.shuffleHistory.clear();
 				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_shuffle_disabled );
 				// Disable Shuffle
-				amdroid.playbackControl.shuffleEnabled = false;
+				amdroid.playbackControl.setShuffle( false );
 				Toast.makeText( getContext(), "Shuffle Disabled", Toast.LENGTH_SHORT ).show();
 			} else
 			{
 				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_shuffle );
 
 				// Enable Shuffle
-				amdroid.playbackControl.shuffleEnabled = true;
+				amdroid.playbackControl.setShuffle( true );
 				Toast.makeText( getContext(), "Shuffle Enabled", Toast.LENGTH_SHORT ).show();
 			}
 		}
@@ -95,21 +113,20 @@ public final class staticMedia extends SlidingDrawer {
 	};
 
 	private View.OnClickListener mRepeatListener = new View.OnClickListener() {
-
 		@Override
 		public void onClick( View view )
 		{
-			if ( amdroid.playbackControl.repeatEnabled )
+			if ( amdroid.playbackControl.repeatEnabled() )
 			{
 				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_revert_disabled );
 				// Disable Repeat
-				amdroid.playbackControl.repeatEnabled = false;
+				amdroid.playbackControl.setRepeat( false );
 				Toast.makeText( getContext(), "Repeat Disabled", Toast.LENGTH_SHORT ).show();
 			} else
 			{
 				( (ImageButton)view ).setImageResource( R.drawable.ic_menu_revert );
 				// Enable Repeat
-				amdroid.playbackControl.repeatEnabled = true;
+				amdroid.playbackControl.setRepeat( true );
 				Toast.makeText( getContext(), "Repeat Enabled", Toast.LENGTH_SHORT ).show();
 			}
 		}
@@ -172,7 +189,6 @@ public final class staticMedia extends SlidingDrawer {
 	 * Completion, buffering and prepared listener that is bound to our mediaPlayer object
 	 */
 	private OnCompletionListener mCompletionListener = new OnCompletionListener() {
-
 		@Override
 		public void onCompletion( MediaPlayer mp )
 		{
@@ -183,7 +199,6 @@ public final class staticMedia extends SlidingDrawer {
 	};
 	
 	private OnBufferingUpdateListener mBufferingUpdateListener = new OnBufferingUpdateListener() {
-
 		@Override
 		public void onBufferingUpdate( MediaPlayer mp, int percent )
 		{
@@ -214,9 +229,10 @@ public final class staticMedia extends SlidingDrawer {
     
     public void onFinishInflate(){
     	super.onFinishInflate();
-    	amdroid.mp.setOnCompletionListener( mCompletionListener );
-    	amdroid.mp.setOnPreparedListener( mPreparedListener );
-    	amdroid.mp.setOnBufferingUpdateListener( mBufferingUpdateListener );
+	// TODO!!!
+    	//amdroid.mp.setOnCompletionListener( mCompletionListener );
+    	//amdroid.mp.setOnPreparedListener( mPreparedListener );
+    	//amdroid.mp.setOnBufferingUpdateListener( mBufferingUpdateListener );
     	initControllerView();
     }
     
@@ -244,19 +260,23 @@ public final class staticMedia extends SlidingDrawer {
         mRepeatButton = (ImageButton) findViewById(R.id.repeat);
         if (mRepeatButton != null) {
 			mRepeatButton.setOnClickListener( mRepeatListener );
-			if ( amdroid.playbackControl.repeatEnabled )
+			/* TODO!!
+			if ( amdroid.playbackControl.repeatEnabled() )
 				mRepeatButton.setImageResource( R.drawable.ic_menu_revert );
 			else
 				mRepeatButton.setImageResource( R.drawable.ic_menu_revert_disabled );
+			*/
 		}
         
         mShuffleButton = (ImageButton) findViewById(R.id.shuffle);
         if (mShuffleButton != null) {
             mShuffleButton.setOnClickListener(mShuffleListener);
-            if ( amdroid.playbackControl.shuffleEnabled )
+		/* TODO!!
+            if ( amdroid.playbackControl.shuffleEnabled() )
             	mShuffleButton.setImageResource( R.drawable.ic_menu_shuffle );
             else
             	mShuffleButton.setImageResource( R.drawable.ic_menu_shuffle_disabled );
+		*/
         }
 
         mProgress = (ProgressBar) findViewById(R.id.mediacontroller_progress);
@@ -272,7 +292,7 @@ public final class staticMedia extends SlidingDrawer {
         mCurrentTime = (TextView) findViewById(R.id.time_current);
         mFormatBuilder = new StringBuilder();
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-        show();
+        //show(); // TODO!!
     }
 
     public void show() {

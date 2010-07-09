@@ -1,29 +1,28 @@
 package com.sound.ampache;
 
-/* Copyright (c) 2008-2009 	Kevin James Purdy <purdyk@gmail.com>                                              
+/* Copyright (c) 2008-2009 	Kevin James Purdy <purdyk@gmail.com>
  * Copyright (c) 2010 		Krisopher Heijari <iif.ftw@gmail.com>
- *                                                                                                           
- * +------------------------------------------------------------------------+                                
- * | This program is free software; you can redistribute it and/or          |                                
- * | modify it under the terms of the GNU General Public License            |                                
+ * Copyright (c) 2010           Jacob Alexander   < haata@users.sf.net >
+ *
+ * +------------------------------------------------------------------------+
+ * | This program is free software; you can redistribute it and/or          |
+ * | modify it under the terms of the GNU General Public License            |
  * | as published by the Free Software Foundation; either version 2         |
  * | of the License, or (at your option) any later version.                 |
  * |                                                                        |
  * | This program is distributed in the hope that it will be useful,        |
- * | but WITHOUT ANY WARRANTY; without even the implied warranty of         |                                
- * | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |                                
- * | GNU General Public License for more details.                           |                                
- * |                                                                        |                                
- * | You should have received a copy of the GNU General Public License      |                                
- * | along with this program; if not, write to the Free Software            |                                
- * | Foundation, Inc., 59 Temple Place - Suite 330,                         |                                
- * | Boston, MA  02111-1307, USA.                                           |                                
- * +------------------------------------------------------------------------+                                
+ * | but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+ * | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+ * | GNU General Public License for more details.                           |
+ * |                                                                        |
+ * | You should have received a copy of the GNU General Public License      |
+ * | along with this program; if not, write to the Free Software            |
+ * | Foundation, Inc., 59 Temple Place - Suite 330,                         |
+ * | Boston, MA  02111-1307, USA.                                           |
+ * +------------------------------------------------------------------------+
  */
 
 import java.net.URLEncoder;
-import java.util.LinkedList;
-import java.util.ListIterator;
 
 import com.sound.ampache.AmpacheListView.IsFetchingListener;
 
@@ -36,7 +35,6 @@ import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;

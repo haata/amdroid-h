@@ -1,6 +1,7 @@
 package com.sound.ampache;
 
 /* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -28,18 +29,13 @@ import java.util.ArrayList;
 import com.sound.ampache.objects.*;
 import android.content.SharedPreferences;
 import android.content.Context;
-import android.preference.PreferenceManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import java.io.*;
-import java.net.*;
-import java.math.BigInteger;
 import java.lang.Integer;
 import java.lang.Long;
 import java.security.MessageDigest;
 import java.util.Date;
-import java.util.List;
 
 public class ampacheCommunicator
 {
@@ -399,6 +395,14 @@ public class ampacheCommunicator
                 current.tracks = contents.toString();
             }
 
+            if (localName.equals("disk")) {
+                current.disk = contents.toString();
+            }
+
+            if (localName.equals("year")) {
+                current.year = contents.toString();
+            }
+
             if (localName.equals("album")) {
                 data.add(current);
             }
@@ -531,8 +535,69 @@ public class ampacheCommunicator
             if (localName.equals("genre")) {
                 current.genre = contents.toString();
             }
+
+            if (localName.equals("size")) {
+                current.size = contents.toString();
+            }
+
+            if (localName.equals("time")) {
+                current.time = contents.toString();
+            }
         }
     }
+
+    private class ampacheVideoParser extends dataHandler {
+        private Video current;
+
+        public void startElement( String namespaceURI,
+                                  String localName,
+                                  String qName,
+                                  Attributes attr) throws SAXException {
+
+            super.startElement(namespaceURI, localName, qName, attr);
+
+            if (localName.equals("video")) {
+                current = new Video();
+                current.id = attr.getValue("id");
+            }
+        }
+
+        public void endElement( String namespaceURI,
+                                String localName,
+                                String qName) throws SAXException {
+
+            super.endElement(namespaceURI, localName, qName);
+
+            if (localName.equals("video")) {
+                data.add(current);
+            }
+
+            if (localName.equals("title")) {
+                current.name = contents.toString();
+            }
+
+            if (localName.equals("mime")) {
+                current.mime = contents.toString();
+            }
+
+            if (localName.equals("resolution")) {
+                current.resolution = contents.toString();
+            }
+
+            if (localName.equals("url")) {
+                current.url = contents.toString();
+            }
+
+            if (localName.equals("genre")) {
+                current.genre = contents.toString();
+            }
+
+            if (localName.equals("size")) {
+                current.size = contents.toString();
+            }
+        }
+    }
+
 
     private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 

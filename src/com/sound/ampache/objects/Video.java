@@ -1,7 +1,6 @@
 package com.sound.ampache.objects;
 
-/* Copyright (c) 2008 Kevin James Purdy <purdyk@onid.orst.edu>
- * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
+/* Copyright (c) 2010 Jacob Alexander < haata@users.sf.net >
  *
  * +------------------------------------------------------------------------+
  * | This program is free software; you can redistribute it and/or          |
@@ -29,19 +28,17 @@ import java.io.ObjectOutput;
 import java.io.IOException;
 import java.lang.ClassNotFoundException;
 
-public class Song extends Media implements Externalizable {
-    public String album = "";
-    public String art = "";
-    public String artist = "";
-    public String time = "";
+public class Video extends Media implements Externalizable {
+    public String mime = "";
+    public String resolution = "";
 
     public String getType() {
-        return "Song";
+        return "Video";
     }
 
     public String extraString() {
-        if (extra == null) {
-            extra = artist + " - " + album;
+        if ( extra == null ) {
+            extra = mime + " - " + resolution;
         }
 
         return extra;
@@ -53,14 +50,9 @@ public class Song extends Media implements Externalizable {
 
     /* Replace the old session id with our current one */
     public String liveUrl() {
-        return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken).replaceFirst(".ogg$", ".mp3");
+        return url.replaceAll("sid=[^&]+","sid=" + com.sound.ampache.amdroid.comm.authToken);
     }
 
-    /* Replace old session id, to use with the Album Art */
-    public String liveArt() {
-        return art.replaceAll("auth=[^&]+","auth=" + com.sound.ampache.amdroid.comm.authToken);
-    }
-    
     public boolean hasChildren() {
         return false;
     }
@@ -69,64 +61,57 @@ public class Song extends Media implements Externalizable {
         return null;
     }
 
-    public Song() {
+    public Video() {
     }
 
     public void writeToParcel(Parcel out, int flags) {
         super.parcelOut(out, flags);
-        out.writeString(artist);
-        out.writeString(art);
-        out.writeString(url);
-        out.writeString(album);
-        out.writeString(time);
+        out.writeString(resolution);
+        out.writeString(mime);
+        out.writeString(genre);
     }
 
-    public Song( Parcel in ) {
+    public Video(Parcel in) {
         readFromParcel( in );
     }
 
     public void readFromParcel( Parcel in ) {
         super.parcelIn(in);
-        artist = in.readString();
-        art = in.readString();
-        url = in.readString();
-        album = in.readString();
-        time = in.readString();
+        resolution = in.readString();
+        mime = in.readString();
+        genre = in.readString();
     }
 
-    public static final Parcelable.Creator<Song> CREATOR
-        = new Parcelable.Creator<Song>() {
-                public Song createFromParcel(Parcel in) {
-                    return new Song(in);
+    public static final Parcelable.Creator<Video> CREATOR
+        = new Parcelable.Creator<Video>() {
+                public Video createFromParcel(Parcel in) {
+                    return new Video(in);
                 }
 
-                public Song[] newArray(int size) {
-                    return new Song[size];
+                public Video[] newArray(int size) {
+                    return new Video[size];
                 }
             };
 
     /* for external */
-
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         id = (String) in.readObject();
         name = (String) in.readObject();
-        artist = (String) in.readObject();
-        art = (String) in.readObject();
         url = (String) in.readObject();
-        album = (String) in.readObject();
         genre = (String) in.readObject();
-        time = (String) in.readObject();
+        size = (String) in.readObject();
+        resolution = (String) in.readObject();
+        mime = (String) in.readObject();
     }
 
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(id);
         out.writeObject(name);
-        out.writeObject(artist);
-        out.writeObject(art);
         out.writeObject(url);
-        out.writeObject(album);
         out.writeObject(genre);
-        out.writeObject(time);
+        out.writeObject(size);
+        out.writeObject(resolution);
+        out.writeObject(mime);
     }
 
 }

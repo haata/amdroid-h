@@ -1,227 +1,317 @@
 package com.sound.ampache;
 
+/* Copyright (c) 2010 Kristopher Heijari < iix.ftw@gmail.com >
+ * Copyright (c) 2010 Jacob Alexander   < haata@users.sf.net >
+ *
+ * +------------------------------------------------------------------------+
+ * | This program is free software; you can redistribute it and/or          |
+ * | modify it under the terms of the GNU General Public License            |
+ * | as published by the Free Software Foundation; either version 2         |
+ * | of the License, or (at your option) any later version.                 |
+ * |                                                                        |
+ * | This program is distributed in the hope that it will be useful,        |
+ * | but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+ * | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+ * | GNU General Public License for more details.                           |
+ * |                                                                        |
+ * | You should have received a copy of the GNU General Public License      |
+ * | along with this program; if not, write to the Free Software            |
+ * | Foundation, Inc., 59 Temple Place - Suite 330,                         |
+ * | Boston, MA  02111-1307, USA.                                           |
+ * +------------------------------------------------------------------------+
+ */
+
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.Arrays;
 
+import android.content.Context;
+import android.os.RemoteException;
 import android.util.Log;
-import com.sound.ampache.objects.Song;
 
-public class GlobalMediaPlayerControl {
+import com.sound.ampache.objects.Media;
+import com.sound.ampache.service.PlayerServiceClient;
 
-    public Boolean prepared = true;
-    
-    // Shuffle and repeat variables
-    public ArrayList<Integer> shuffleHistory = new ArrayList<Integer>();
-    public boolean shuffleEnabled = false;
-    public boolean repeatEnabled = false;
-    
-    // Playlist variables
-    private ArrayList<Song> playlistCurrent;
-    private PlaylistCurrentListener playlistCurrentListener;
-    private int playingIndex;
-    private PlayingIndexListener playingIndexListener;
+public class GlobalMediaPlayerControl extends PlayerServiceClient {
+
+	final static String LOG_TAG = "Amdroid_GlobalMediaPlayerControl";
+	public Boolean prepared = true;
+
+	// Playlist variables
+	private PlaylistCurrentListener playlistCurrentListener;
+	private PlayingIndexListener playingIndexListener;
 
 	public GlobalMediaPlayerControl()
 	{
 		amdroid.playListVisible = true;
-		playlistCurrent = new ArrayList<Song>();
-		playingIndex = 0;
 	}
 
-    public int getCurrentPosition() {
-        if (amdroid.mp.isPlaying()) {
-            return amdroid.mp.getCurrentPosition();
-        }
-        return 0;
-    }
+	public int getCurrentPosition() {
+		try {
+			return serviceInterface().getCurrentPosition();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return -1;
+		}
+	}
 
-    public int getDuration() {
-        if (amdroid.mp.isPlaying()) {
-            return amdroid.mp.getDuration();
-        }
-        return 0;
-    }
+	public int getDuration() {
+		try {
+			return serviceInterface().getDuration();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return -1;
+		}
+	}
 
-    public boolean isPlaying() {
-        return amdroid.mp.isPlaying();
-    }
+	public int getBuffer() {
+		try {
+			return serviceInterface().getBuffer();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return -1;
+		}
+	}
 
-    public void pause() {
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.pause();
-        }
-    }
+	public boolean isPlaying() {
+		try {
+			return serviceInterface().isPlaying();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return false;
+		}
+	}
 
-    public void seekTo(int pos) {
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.seekTo(pos);
-        }
-    }
+	public void pause() {
+		try {
+			if ( isPlaying() )
+				serviceInterface().playPause();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
+
+	public void seekTo( int pos ) {
+		try {
+			serviceInterface().seek( pos );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
 
 	public void start()
 	{
-		if ( !amdroid.mediaplayerInitialized )
-			play();
-
-		else
-			amdroid.mp.start();
+		play();
 	}
 
-    public void play() {
-        
-        // set to show that our mediaplayer has been initialized. 
-        amdroid.mediaplayerInitialized = true;
-        
-        if (playingIndex >= playlistCurrent.size()) {
-            setPlayingIndex( playlistCurrent.size() );
-            //mc.setEnabled(false);
-            return;
-        }
+	public void playMedia( Media media ) {
+		try {
+			serviceInterface().playMedia( media );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
 
-        if (playingIndex < 0) {
-            setPlayingIndex(0);
-            //mc.setEnabled(false);
-            return;
-        }
+	public void play() {
+		// set to show that our mediaplayer has been initialized. 
+		amdroid.mediaplayerInitialized = true;
 
-        Song chosen = (Song) playlistCurrent.get(playingIndex);
+		try {
+			playMedia( serviceInterface().getCurrentMedia() );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
 
-        if (amdroid.mp.isPlaying()) {
-            amdroid.mp.stop();
-        }
-
-        amdroid.mp.reset();
-        try {
-            Log.i("Amdroid", "Song URL     - " + chosen.url );
-            Log.i("Amdroid", "Song URL (C) - " + chosen.liveUrl() );
-            amdroid.mp.setDataSource(chosen.liveUrl());
-            amdroid.mp.prepareAsync();
-            prepared = false;
-        } catch (Exception blah) {
-            Log.i("Amdroid", "Tried to get the song but couldn't...sorry D:");
-            return;
-        }
-    }
+	public void stop() {
+		try {
+			serviceInterface().stop();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
     
-    public void doPauseResume() {
-        if (isPlaying()) {
-            pause();
-        } else {
-            start();
-        }
-    }
+	public void doPauseResume() {
+		try {
+			serviceInterface().playPause();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
    
-    public void nextInPlaylist() {
-        if ( shuffleEnabled ) {
-            // So we don't play a song more than once
-            if ( !shuffleHistory.contains( playingIndex ) )
-                shuffleHistory.add( playingIndex );
+	public void nextInPlaylist() {
+		try {
+			serviceInterface().next();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
 
-            // Just played the last song, repeat if repeat is enabled, stop otherwise
-            if ( shuffleHistory.size() >= playlistCurrent.size() && repeatEnabled )
-                shuffleHistory.clear();
-            else
-                setPlayingIndex(playlistCurrent.size());
-
-            int next = 0;
-            Random rand = new Random();
-
-            // Try random numbers until finding one that is not used
-            do {
-                next = rand.nextInt( playlistCurrent.size() );
-            } while ( shuffleHistory.contains( next ) );
-
-            // Set next playing index
-            setPlayingIndex(next);
-        } else {
-            setPlayingIndex(playingIndex+1);
-
-            // Reset playlist to beginning if repeat is enabled
-            if ( playingIndex >= playlistCurrent.size() && repeatEnabled )
-                setPlayingIndex(0);
-        }
-    }
-
-    public void prevInPlaylist() {
-        if ( shuffleEnabled ) {
-            int currIndex = shuffleHistory.indexOf( playingIndex );
-
-            // Call a random next song if this is the first song
-            if ( shuffleHistory.size() < 1 ) {
-                nextInPlaylist();
-
-                return;
-            }
-
-            // Previous (Current item is not in the shuffle history)
-            if ( currIndex == -1 ) {
-                // Set previous song
-                setPlayingIndex( (Integer)shuffleHistory.get( shuffleHistory.size() - 1 ) );
-
-                // Remove item, I consider Previous like an undo
-                shuffleHistory.remove( shuffleHistory.size() - 1 );
-            }
-            // This shouldn't be possible, but...
-            else if ( currIndex > 0 ) {
-                setPlayingIndex( (Integer)shuffleHistory.get( currIndex - 1 ) );
-
-                shuffleHistory.remove( currIndex );
-            }
-        }
-        // Do not call previous if it is the first song
-        else if ( playingIndex > 0 )
-            setPlayingIndex( playingIndex -1 );
-    }
+	public void prevInPlaylist() {
+		try {
+			serviceInterface().prev();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
     
-    // Functions used to modify playingIndex and notify about changes
-    public void setPlayingIndex(int i){
-        playingIndex=i;
-        if (playingIndexListener !=null)
-            playingIndexListener.onPlayingIndexChange();
-    }
+	// Functions used to modify playingIndex and notify about changes
+	public void setPlayingIndex( int i ) {
+		try {
+			serviceInterface().setCurrentIndex( i );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+
+		// GUI Trigger
+		if ( playingIndexListener != null )
+			playingIndexListener.onPlayingIndexChange();
+	}
     
-    public int getPlayingIndex(){
-        return playingIndex;
-    }
+	public int getPlayingIndex() {
+		try {
+			return serviceInterface().getCurrentIndex();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return -1;
+		}
+	}
+
+	public int getPlaylistSize() {
+		try {
+			return serviceInterface().getPlaylistSize();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return -1;
+		}
+	}
     
-    public void setPlayingIndexListener(PlayingIndexListener listener){
-    	playingIndexListener = listener;
-    }
-    
-    // Functions used to modify playlistCurrent and notify about changes
-    public void setPlaylistCurrentListener(PlaylistCurrentListener listener){
-        playlistCurrentListener=listener;
-    }
-    public void addAllPlaylistCurrent(ArrayList<Song> songList){
-        playlistCurrent.addAll(songList);
-        if ( playlistCurrentListener != null )
-        	playlistCurrentListener.onPlaylistCurrentChange();
-    }
-    public void addPlaylistCurrent(Song song){
-        playlistCurrent.add(song);
-        if ( playlistCurrentListener != null )
-        	playlistCurrentListener.onPlaylistCurrentChange();
-    }
-    public void clearPlaylistCurrent(){
-        playlistCurrent.clear();
-        setPlayingIndex(0);
-        if ( playlistCurrentListener != null )
-        	playlistCurrentListener.onPlaylistCurrentChange();
-    }
+	public void setPlayingIndexListener( PlayingIndexListener listener ) {
+		playingIndexListener = listener;
+	}
+
+	// Functions used to modify playlistCurrent and notify about changes
+	public void setPlaylistCurrentListener( PlaylistCurrentListener listener ) {
+		playlistCurrentListener = listener;
+	}
+	public void addAllPlaylistCurrent( ArrayList<Media> mediaList ) {
+		try {
+			serviceInterface().enqueue( (Media[]) mediaList.toArray() );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+
+		if ( playlistCurrentListener != null )
+			playlistCurrentListener.onPlaylistCurrentChange();
+	}
+	public void addPlaylistCurrent( Media media ) {
+		try {
+			serviceInterface().add( media );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+
+		if ( playlistCurrentListener != null )
+			playlistCurrentListener.onPlaylistCurrentChange();
+	}
+	public void clearPlaylistCurrent() {
+		try {
+			serviceInterface().clearPlaylist();
+			serviceInterface().clearShuffleHistory();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+
+		if ( playlistCurrentListener != null )
+			playlistCurrentListener.onPlaylistCurrentChange();
+	}
+
+	public boolean shuffleEnabled() {
+		try {
+			return serviceInterface().getShufflePlay();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return false;
+		}
+	}
+
+	public boolean repeatEnabled() {
+		try {
+			return serviceInterface().getRepeatPlay();
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return false;
+		}
+	}
+
+	public void setShuffle( boolean randomize ) {
+		try {
+			serviceInterface().setShufflePlay( randomize );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
+
+	public void setRepeat( boolean loop ) {
+		try {
+			serviceInterface().setRepeatPlay( loop );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return;
+		}
+	}
 
 	/*
-	 * Changes should never be made directly on the returned object but instead via the functions
-	 * supplied in this class. Unless we want to make changes without calling the notifying
-	 * functions.
+	 * The returned object is a copy of the playlist used in the service. 
 	 */
-    public ArrayList<Song> getPlaylistCurrent(){
-    	return playlistCurrent;
-    }
+	public ArrayList<Media> getPlaylistCurrent(){
+		try {
+			return new ArrayList( Arrays.asList( serviceInterface().currentPlaylist() ) );
+		}
+		catch ( RemoteException ex ) {
+			Log.e( LOG_TAG, "DeadObjectException",ex );
+			return null;
+		}
+	}
     
     
-    /*
-     * Listener Interfaces
-     */
+	/*
+	* Listener Interfaces
+	*/
 	public interface PlayingIndexListener {
 		public void onPlayingIndexChange();
 	}
@@ -229,5 +319,5 @@ public class GlobalMediaPlayerControl {
 	public interface PlaylistCurrentListener {
 		public void onPlaylistCurrentChange();
 	}
-
 }
+

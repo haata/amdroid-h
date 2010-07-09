@@ -53,6 +53,7 @@ import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 import com.sound.ampache.objects.Song;
+import com.sound.ampache.objects.Media;
 
 public final class playlistActivity extends Activity implements OnItemClickListener,
 		GlobalMediaPlayerControl.PlayingIndexListener,
@@ -109,7 +110,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         switch (item.getItemId()) {
         case R.id.pl_clear:
             if (amdroid.playbackControl.isPlaying())
-                amdroid.mp.stop();
+                amdroid.playbackControl.stop();
             amdroid.playbackControl.setPlayingIndex(0);
             pla.clearItems();
             break;
@@ -127,13 +128,13 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
         case R.id.pl_load:
             if (amdroid.playbackControl.isPlaying())
-                amdroid.mp.stop();
+                amdroid.playbackControl.stop();
             amdroid.playbackControl.setPlayingIndex(0);
             //mc.setEnabled(false);
             try {
                 FileInputStream pin = openFileInput("playlist");
                 ObjectInputStream poin = new ObjectInputStream(pin);
-                amdroid.playbackControl.addAllPlaylistCurrent( (ArrayList<Song>) poin.readObject() );
+                amdroid.playbackControl.addAllPlaylistCurrent( (ArrayList<Media>) poin.readObject() );
                 pin.close();
             } catch (Exception poo) {
                 Toast.makeText(this, "Error: " + poo.toString(), Toast.LENGTH_LONG).show();
@@ -263,7 +264,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
 
         public View getView(int position, View convertView, ViewGroup parent) {
             plI holder;
-            Song cur = amdroid.playbackControl.getPlaylistCurrent().get(position);
+            Media cur = amdroid.playbackControl.getPlaylistCurrent().get(position);
 
             /* we don't reuse  */
             if (convertView == null) {
@@ -311,7 +312,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
            ((AmdroidActivityGroup) getParent()).setActivity(AmdroidActivityGroup.GOTO_HOME);
     }
 
-	@Override
+    @Override
 	public void onPlayingIndexChange()
 	{
 		turnOffPlayingView();
@@ -320,7 +321,7 @@ public final class playlistActivity extends Activity implements OnItemClickListe
         loadAlbumArt();
 	}
 
-	@Override
+    @Override
 	public void onPlaylistCurrentChange()
 	{
 		pla.notifyDataSetChanged();
