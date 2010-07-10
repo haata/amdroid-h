@@ -177,6 +177,8 @@ public class ampacheCommunicator
                         } else if (directive[0].equals("tags")) {
                             hand = new ampacheTagParser();
                             append += "&filter=" + directive[1];
+                        } else if (directive[0].equals("videos")) {
+                            hand = new ampacheVideoParser();
                         } else if (directive[0].equals("search_songs")) {
                             hand = new ampacheSongParser();
                             append += "&filter=" + directive[1];
@@ -545,7 +547,7 @@ public class ampacheCommunicator
             }
         }
     }
-
+ 
     private class ampacheVideoParser extends dataHandler {
         private Video current;
 
