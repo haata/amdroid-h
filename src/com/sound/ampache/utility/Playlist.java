@@ -134,7 +134,11 @@ public class Playlist extends ArrayList<Media> {
 				currentIndex = 0;
 		}
 
-		return super.get( currentIndex );
+		// Index is within the list bounds
+		if ( currentIndex >= 0 && currentIndex < super.size() )
+			return super.get( currentIndex );
+
+		return null;
 	}
 
 	public Media prev() {
@@ -164,7 +168,11 @@ public class Playlist extends ArrayList<Media> {
 		else if ( currentIndex > 0 )
 			currentIndex--;
 
-		return super.get( currentIndex );
+		// Index is within the list bounds
+		if ( currentIndex >= 0 && currentIndex < super.size() )
+			return super.get( currentIndex );
+
+		return null;
 	}
 }
 
