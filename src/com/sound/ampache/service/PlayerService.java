@@ -22,6 +22,9 @@ package com.sound.ampache.service;
 
 import java.util.Arrays;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -80,6 +83,30 @@ public class PlayerService extends Service {
 		// TODO Warn the user (text) that the VM is killing the service
 	}
 
+	// Start notifications
+	public void statusNotify() {
+		// Setup Notification Manager for Amdroid
+		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		int icon = com.sound.ampache.R.drawable.amdroid_notification;
+		String mediaName = playlist.getCurrentMedia().name; 
+		CharSequence tickerText = "Amdroid - " + mediaName;              
+		long when = System.currentTimeMillis();        
+		Context context = getApplicationContext();
+		String extraString = playlist.getCurrentMedia().extraString();
+		Intent notificationIntent = new Intent(this, com.sound.ampache.playlistActivity.class);
+		PendingIntent mediaIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+		Notification notification = new Notification(icon, tickerText, when);
+		notification.setLatestEventInfo(context, mediaName, extraString, mediaIntent);
+		notification.flags |= Notification.FLAG_ONGOING_EVENT;
+		amdroidNotifyManager.notify(1, notification);
+	}
+    
+	// Stop notifications
+	public void stopNotify() {
+		// Setup Notification Manager for Amdroid
+		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		amdroidNotifyManager.cancel(1);
+	}
 
 	// Interface **********************************************************
 
@@ -104,18 +131,23 @@ public class PlayerService extends Service {
 		// Player Controls
 		public void playMedia( Media media ) {
 			mediaPlayer.playMedia( media );
+			statusNotify();
 		}
 		public void playPause() {
 			mediaPlayer.doPauseResume();
+			stopNotify();
 		}
 		public void stop() {
 			mediaPlayer.stop();
+			stopNotify();
 		}
 		public void next() {
 			mediaPlayer.playMedia( playlist.next() );
+			statusNotify();
 		}
 		public void prev() {
 			mediaPlayer.playMedia( playlist.prev() );
+			statusNotify();
 		}
 		public void seek( int msec ) {
 			mediaPlayer.seekTo( msec );
