@@ -26,6 +26,7 @@ package com.sound.ampache.utility;
  * | Boston, MA  02111-1307, USA.                                           |
  * +------------------------------------------------------------------------+
  */
+
 import java.util.ArrayList;
 
 import com.sound.ampache.objects.Media;
@@ -42,6 +43,7 @@ import android.util.Log;
 public class Player {
 
 	private MediaPlayer mPlayer;
+	private Playlist mPlaylist;
 
 	private static String TAG = "AmdroidPlayer";
 	private Song mSong;
@@ -73,9 +75,10 @@ public class Player {
 		abstract public void onPlayerStopped();
 	}
 
-	public Player(Context context) {
+	public Player( Context context, Playlist playlist ) {
 
 		mContext = context;
+		mPlaylist = playlist;
 
 		mPhoneStateListener = new MyPhoneStateListener();
 
@@ -83,14 +86,20 @@ public class Player {
 
 		mMediaPlayerListener = new MyMediaPlayerListener();
 
+		// Prepare Android Media Player
 		mPlayer = new MediaPlayer();
-		mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		mPlayer.setOnErrorListener(mMediaPlayerListener);
-		mPlayer.setOnPreparedListener(mMediaPlayerListener);
-		mPlayer.setOnCompletionListener(mMediaPlayerListener);
-		mPlayer.setOnBufferingUpdateListener(mMediaPlayerListener);
+		mPlayer.setAudioStreamType( AudioManager.STREAM_MUSIC );
 
-		setState(STATE.Idle);
+		// Setting up Media Player Listeners
+		mPlayer.setOnBufferingUpdateListener ( mMediaPlayerListener );
+		mPlayer.setOnCompletionListener      ( mMediaPlayerListener );
+		mPlayer.setOnErrorListener           ( mMediaPlayerListener );
+		mPlayer.setOnInfoListener            ( mMediaPlayerListener );
+		mPlayer.setOnPreparedListener        ( mMediaPlayerListener );
+		mPlayer.setOnSeekCompleteListener    ( mMediaPlayerListener );
+		mPlayer.setOnVideoSizeChangedListener( mMediaPlayerListener );
+
+		setState( STATE.Idle );
 	}
 
 	public void stop() {
@@ -280,11 +289,47 @@ public class Player {
 	}
 
 	private class MyMediaPlayerListener implements
-			MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
-			MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnErrorListener {
-		public boolean onError(MediaPlayer mp, int what, int extra) {
-			Log.e(TAG, "Player error (" + what + "," + extra + ")");
-			return false;
+			MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener,
+			MediaPlayer.OnErrorListener,           MediaPlayer.OnInfoListener,
+			MediaPlayer.OnPreparedListener,        MediaPlayer.OnSeekCompleteListener,
+			MediaPlayer.OnVideoSizeChangedListener {
+		public void onBufferingUpdate( MediaPlayer mp, int buffer ) {
+			updateBuffer( buffer );
+		}
+
+		public void onCompletion( MediaPlayer mp ) {
+			mSong = null;
+			mVideo = null;
+
+			mPlayer.stop();
+			setState( STATE.Stopped );
+
+			Log.v( TAG, "Completion" );
+			Media media = mPlaylist.next();
+
+			if ( media == null ) {
+				for ( PlayerListener obj : mPlayerListeners ) {
+					obj.onPlayerStopped();
+				}
+
+				mPlayer.stop();
+				mPlayer.reset();
+				setState( STATE.Stopped );
+
+				return;
+			}
+
+			playMedia( media );
+		}
+
+		public boolean onError( MediaPlayer mp, int what, int extra ) {
+			Log.e( TAG, "Player error (" + what + ", " + extra + ")" );
+			return true;
+		}
+
+		public boolean onInfo( MediaPlayer mp, int what, int extra ) {
+			Log.d( TAG, "Player info (" + what + ", " + extra + ")" );
+			return true;
 		}
 
 		public void onPrepared(MediaPlayer mp) {
@@ -296,28 +341,12 @@ public class Player {
 			mPlayAfterPrepared = true;
 		}
 
-		public void onCompletion(MediaPlayer mp) {
-			/* TODO
-			mSong = null;
-			mPlayer.stop();
-			setState(STATE.Stopped);
-
-			Log.v(TAG, "Completion");
-			Song song = Lullaby.pl.playNext();
-			*/
-			Song song = null;
-			if (song == null) {
-				for (PlayerListener obj : mPlayerListeners) {
-					obj.onPlayerStopped();
-				}
-				mPlayer.stop();
-				mPlayer.reset();
-				setState(STATE.Stopped);
-			}
+		public void onSeekComplete( MediaPlayer mp ) {
+			// TODO
 		}
 
-		public void onBufferingUpdate(MediaPlayer mp, int buffer) {
-			updateBuffer(buffer);
+		public void onVideoSizeChanged( MediaPlayer mp, int width, int height ) {
+			// TODO
 		}
 	}
 
