@@ -45,7 +45,7 @@ public class BrowseActivity extends Activity implements OnItemClickListener, IsF
 	// Root list and adapter. This is only used to display the root options.
 	private ListView emptyListView;
 	private ArrayList<String> emptyList = new ArrayList<String>( Arrays.asList( new String[] {
-			"Artists", "Albums", "Tags" } ) );
+			"Artists", "Albums", "Tags", "Videos" } ) );
 	private ArrayAdapter<String> emptyListAdapter;
 
 	private AmpacheListView ampacheListView;
