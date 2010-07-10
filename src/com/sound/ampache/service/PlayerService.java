@@ -64,8 +64,8 @@ public class PlayerService extends Service {
 	@Override
 	public void onCreate() {
 		Log.d( LOG_TAG, "onCreate" );
-		mediaPlayer = new Player( this );
 		playlist = new Playlist();
+		mediaPlayer = new Player( this, playlist );
 	}
 
 	@Override
