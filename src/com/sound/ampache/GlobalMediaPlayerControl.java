@@ -218,8 +218,9 @@ public class GlobalMediaPlayerControl extends PlayerServiceClient {
 		playlistCurrentListener = listener;
 	}
 	public void addAllPlaylistCurrent( ArrayList<Media> mediaList ) {
-		try {
-			serviceInterface().enqueue( (Media[]) mediaList.toArray() );
+		try
+		{
+			serviceInterface().enqueue( (Media[])mediaList.toArray( new Media[0] ) );
 		}
 		catch ( RemoteException ex ) {
 			Log.e( LOG_TAG, "DeadObjectException",ex );
