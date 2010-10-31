@@ -21,6 +21,7 @@ package com.sound.ampache.service;
  */
 
 import java.util.Arrays;
+import java.util.ArrayList;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -29,6 +30,9 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.sound.ampache.objects.*;
@@ -39,18 +43,29 @@ import com.sound.ampache.utility.Playlist;
 public class PlayerService extends Service {
 	private static final String LOG_TAG = "Amdroid_PlayerService";
 
+	// Basic service components
 	private Player mediaPlayer;
 	private Playlist playlist;
+
+	private PlayerInterfaceListener listener;
+
+	// Clients to send messages to
+	private ArrayList<Messenger> clients = new ArrayList<Messenger>();
+
+
+	// **********************************************************************
+	// Client to Service Requests *******************************************
+	// **********************************************************************
 
 	@Override
 	public IBinder onBind( Intent intent ) {
 		Log.d( LOG_TAG, "onBind" );
 
-		// Make sure it's a valid request
+		// Make sure it's a valid request TODO
 		if ( IPlayerService.class.getName().equals( intent.getAction() ) )
 			return mBinder;
 
-			return mBinder;
+		return mBinder;
 	}
 
 	@Override
@@ -70,6 +85,10 @@ public class PlayerService extends Service {
 		Log.d( LOG_TAG, "onCreate" );
 		playlist = new Playlist();
 		mediaPlayer = new Player( this, playlist );
+
+		// Setup Listner
+		listener = new PlayerInterfaceListener();
+		mediaPlayer.setPlayerListener( listener );
 	}
 
 	@Override
@@ -82,31 +101,6 @@ public class PlayerService extends Service {
 	protected void finalize() {
 		Log.d( LOG_TAG, "Android hath slain me :(killed):" );
 		// TODO Warn the user (text) that the VM is killing the service
-	}
-
-	// Start notifications
-	public void statusNotify() {
-		// Setup Notification Manager for Amdroid
-		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		int icon = com.sound.ampache.R.drawable.amdroid_notification;
-		String mediaName = playlist.getCurrentMedia().name; 
-		CharSequence tickerText = "Amdroid - " + mediaName;              
-		long when = System.currentTimeMillis();        
-		Context context = getApplicationContext();
-		String extraString = playlist.getCurrentMedia().extraString();
-		Intent notificationIntent = new Intent(this, com.sound.ampache.playlistActivity.class);
-		PendingIntent mediaIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-		Notification notification = new Notification(icon, tickerText, when);
-		notification.setLatestEventInfo(context, mediaName, extraString, mediaIntent);
-		notification.flags |= Notification.FLAG_ONGOING_EVENT;
-		amdroidNotifyManager.notify(1, notification);
-	}
-    
-	// Stop notifications
-	public void stopNotify() {
-		// Setup Notification Manager for Amdroid
-		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		amdroidNotifyManager.cancel(1);
 	}
 
 	// Interface **********************************************************
@@ -131,6 +125,8 @@ public class PlayerService extends Service {
 
 		// Player Controls
 		public void playMedia( Media media ) {
+			// TODO REMOVEME
+			sendMessage( MSG_PLAY );
 			mediaPlayer.playMedia( media );
 			statusNotify();
 		}
@@ -212,9 +208,15 @@ public class PlayerService extends Service {
 		}
 		public void setShufflePlay( boolean randomize ) {
 			playlist.setShufflePlay( randomize );
+
+			// Callback
+			sendMessage( MSG_SHUFFLE_CHANGED, randomize ? 0 : 1 );
 		}
 		public void setRepeatPlay( boolean loop ) {
 			playlist.setRepeatPlay( loop );
+
+			// Callback
+			sendMessage( MSG_REPEAT_CHANGED, loop ? 0 : 1 );
 		}
 		public void clearShuffleHistory() {
 			playlist.clearShuffleHistory();
@@ -223,6 +225,134 @@ public class PlayerService extends Service {
 		// Misc
 		public void closeService() {
 		}
+		public void registerMessenger( Messenger messenger ) {
+			clients.add( messenger );
+		}
+		public void unregisterMessenger( Messenger messenger ) {
+			int remove = clients.lastIndexOf( messenger );
+
+			if ( remove >= 0 )
+				clients.remove( remove );
+		}
 	};
+
+
+	// **********************************************************************
+	// Service to Client Messages *******************************************
+	// **********************************************************************
+
+	// Basic message types
+	static final int MSG_SEEK_POSITION = 1;       // Sent every time a seek is completed
+	static final int MSG_BUFFER_PERCENTAGE = 2;   // Sent when buffer updates
+	static final int MSG_NEW_MEDIA = 3;           // Sent on new media playing
+	static final int MSG_PLAYLIST_INDEX = 4;      // Sent on new media playing
+	static final int MSG_SHUFFLE_CHANGED = 5;     // Sent if the shuffle setting is changed
+	static final int MSG_REPEAT_CHANGED = 6;      // Sent if the repeat setting is changed
+	static final int MSG_PLAY = 7;                // Sent if the media player starts playing
+	static final int MSG_PAUSE = 8;               // Sent if the media player pauses the media
+	static final int MSG_STOP = 9;                // Sent if the media player stops playing
+	static final int MSG_VIDEO_SIZE_CHANGED = 10; // Sent if the video size changes
+	static final int MSG_PLAYLIST_CHANGED = 11;
+
+	// 1  - arg1 | getCurrentPosition - arg2 | 0
+	// 2  - arg1 | buffer percentage - arg2 | 0
+	// 3  - no args
+	// 4  - arg1 | playlist index - arg2 | 0
+	// 5  - arg1 | 0 = True / 1 = False - arg2 | 0
+	// 6  - arg1 | 0 = True / 1 = False - arg2 | 0
+	// 7  - no args
+	// 8  - no args
+	// 9  - no args
+	// 10 - arg1 | new width - arg2 | new height
+	// 11 - arg1 | new size
+
+	public void sendMessage( int message, int arg1, int arg2 ) {
+		for ( int c = 0; c < clients.size(); c++ ) {
+			try {
+				clients.get( c ).send( Message.obtain( null, message, arg1, arg2 ) );
+			}
+			catch ( RemoteException exp ) {
+				// Client is dead, remove it
+				clients.remove( c );
+			}
+		}
+	}
+
+	public void sendMessage( int message, int arg ) {
+		sendMessage( message, arg, 0 );
+	}
+
+	public void sendMessage( int message ) {
+		for ( int c = 0; c < clients.size(); c++ ) {
+			try {
+				clients.get( c ).send( Message.obtain( null, message ) );
+			}
+			catch ( RemoteException exp ) {
+				// Client is dead, remove it
+				clients.remove( c );
+			}
+		}
+	}
+
+	// Player Interface
+	private class PlayerInterfaceListener implements Player.PlayerListener {
+		public void onPlayerStopped() {
+			sendMessage( MSG_STOP );
+		}
+
+		public void onTogglePlaying( boolean playing ) {
+			if ( playing )
+				sendMessage( MSG_PLAY );
+			else
+				sendMessage( MSG_PAUSE );
+		}
+
+		public void onNewMediaPlaying( Media media ) {
+			sendMessage( MSG_NEW_MEDIA );
+		}
+
+		public void onVideoSizeChanged( int width, int height ) {
+			sendMessage( MSG_VIDEO_SIZE_CHANGED, width, height );
+		}
+
+		public void onBuffering( int buffer ) {
+			sendMessage( MSG_BUFFER_PERCENTAGE, buffer );
+		}
+
+		public void onSeek( int position ) {
+			sendMessage( MSG_SEEK_POSITION, position );
+		}
+	}
+
+
+	// **********************************************************************
+	// Notifications ********************************************************
+	// **********************************************************************
+
+	// Start notifications
+	public void statusNotify() {
+		// Setup Notification Manager for Amdroid
+		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		int icon = com.sound.ampache.R.drawable.amdroid_notification;
+		String mediaName = playlist.getCurrentMedia().name; 
+		CharSequence tickerText = "Amdroid - " + mediaName;              
+		long when = System.currentTimeMillis();        
+		Context context = getApplicationContext();
+		String extraString = playlist.getCurrentMedia().extraString();
+		Intent notificationIntent = new Intent(this, com.sound.ampache.playlistActivity.class);
+		PendingIntent mediaIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+		Notification notification = new Notification(icon, tickerText, when);
+		notification.setLatestEventInfo(context, mediaName, extraString, mediaIntent);
+		notification.flags |= Notification.FLAG_ONGOING_EVENT;
+		amdroidNotifyManager.notify(1, notification);
+	}
+    
+	// Stop notifications
+	public void stopNotify() {
+		// Setup Notification Manager for Amdroid
+		NotificationManager amdroidNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		amdroidNotifyManager.cancel(1);
+	}
+
 }
 

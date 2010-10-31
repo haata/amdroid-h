@@ -6,6 +6,7 @@ package com.sound.ampache.service;
 
 // Special types that we're using
 import com.sound.ampache.objects.Media;
+import com.sound.ampache.service.Messenger;
 
 interface IPlayerService {
 	// Player Status
@@ -49,5 +50,7 @@ interface IPlayerService {
 
 	// Misc
 	void closeService();
+	void registerMessenger( in Messenger messenger );
+	void unregisterMessenger( in Messenger messenger );
 }
 

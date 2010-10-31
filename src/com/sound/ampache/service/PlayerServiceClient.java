@@ -24,7 +24,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.sound.ampache.service.IPlayerService;
@@ -42,6 +46,11 @@ public class PlayerServiceClient {
 	protected void finalize() {
 		releaseService();
 	}
+
+
+	// **********************************************************************
+	// Client to Service Requests *******************************************
+	// **********************************************************************
 
 	public void initService( Context context ) {
 		if ( conn == null ) {
@@ -98,6 +107,16 @@ public class PlayerServiceClient {
 		public void onServiceConnected( ComponentName className, IBinder boundService ) {
 			playerService = IPlayerService.Stub.asInterface( (IBinder)boundService );
 			Log.d( LOG_TAG, "onServiceConnected" );
+
+			// Send Messenger
+			try {
+				serviceInterface().registerMessenger( mMessenger );
+			}
+			catch ( RemoteException ex ) {
+				Log.e( LOG_TAG, "Could not register Service Callback Messenger!! Very Bad!!" );
+			}
+
+			// TODO Signal interface that the service is ready
 		}
 
 		public void onServiceDisconnected( ComponentName className ) {
@@ -105,5 +124,83 @@ public class PlayerServiceClient {
 			Log.d( LOG_TAG, "onServiceDisconnected" );
 		}
 	};
+
+
+	// **********************************************************************
+	// Service to Client Messages *******************************************
+	// **********************************************************************
+
+	class IncomingHandler extends Handler {
+		@Override
+		public void handleMessage( Message msg ) {
+			switch ( msg.what ) {
+			case PlayerService.MSG_SEEK_POSITION:
+				Log.d( LOG_TAG, "MSG_SEEK_POSITION: " + msg.arg1 );
+				break;
+
+			case PlayerService.MSG_BUFFER_PERCENTAGE:
+				Log.d( LOG_TAG, "MSG_BUFFER_PERCENTAGE: " + msg.arg1 );
+				break;
+
+			case PlayerService.MSG_NEW_MEDIA:
+				Log.d( LOG_TAG, "MSG_NEW_MEDIA" );
+				break;
+
+			case PlayerService.MSG_PLAYLIST_INDEX:
+				Log.d( LOG_TAG, "MSG_PLAYLIST_INDEX: " + msg.arg1 );
+				break;
+
+			case PlayerService.MSG_SHUFFLE_CHANGED:
+				Log.d( LOG_TAG, "MSG_SHUFFLE_CHANGED: " + msg.arg1 == "0" ? "on" : "off" );
+				break;
+
+			case PlayerService.MSG_REPEAT_CHANGED:
+				Log.d( LOG_TAG, "MSG_REPEAT_CHANGED: " + msg.arg1 == "0" ? "on" : "off");
+				break;
+
+			case PlayerService.MSG_PLAY:
+				Log.d( LOG_TAG, "MSG_PLAY" );
+				break;
+
+			case PlayerService.MSG_PAUSE:
+				Log.d( LOG_TAG, "MSG_PAUSE" );
+				break;
+
+			case PlayerService.MSG_STOP:
+				Log.d( LOG_TAG, "MSG_STOP" );
+				break;
+
+			case PlayerService.MSG_VIDEO_SIZE_CHANGED:
+				Log.d( LOG_TAG, "MSG_VIDEO_SIZE_CHANGED | Width: " + msg.arg1 + " | Height: " + msg.arg2 );
+				break;
+
+			case PlayerService.MSG_PLAYLIST_CHANGED:
+				Log.d( LOG_TAG, "MSG_PLAYLIST_CHANGED: " + msg.arg1 );
+				break;
+
+			default:
+				super.handleMessage(msg);
+				break;
+			}
+		}
+	}
+
+	// Target for the incoming messages
+	final Messenger mMessenger = new Messenger( new IncomingHandler() );
+
+	// Interface Functions
+	public interface ServiceIncomingListener {
+		abstract public void onSeek( int position );
+		abstract public void onBuffering( int buffer );
+		abstract public void onNewMedia();
+		abstract public void onPlaylistIndexChanged( int index );
+		abstract public void onShuffledChanged( int enabled );
+		abstract public void onRepeatChanged( int enabled );
+		abstract public void onPlay();
+		abstract public void onPause();
+		abstract public void onStop();
+		abstract public void onVideoSizeChanged( int width, int height );
+		abstract public void onPlaylistChanged( int size );
+	}
 }
 

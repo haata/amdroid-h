@@ -65,14 +65,16 @@ public class Player {
 
 	private ArrayList<PlayerListener> mPlayerListeners;
 
-	public static abstract class PlayerListener {
-		abstract public void onTogglePlaying(boolean playing);
-
-		abstract public void onNewSongPlaying(Song song);
-		abstract public void onNewVideoPlaying(Video video);
-
-		abstract public void onBuffering(int buffer);
+	public interface PlayerListener {
+		abstract public void onTogglePlaying( boolean playing );
 		abstract public void onPlayerStopped();
+
+		abstract public void onNewMediaPlaying( Media media );
+
+		abstract public void onVideoSizeChanged( int width, int height );
+
+		abstract public void onBuffering( int buffer );
+		abstract public void onSeek( int position );
 	}
 
 	public Player( Context context, Playlist playlist ) {
@@ -103,7 +105,12 @@ public class Player {
 	}
 
 	public void stop() {
+		for ( PlayerListener obj : mPlayerListeners ) {
+			obj.onPlayerStopped();
+		}
+
 		mPlayer.stop();
+		mPlayer.reset();
 		setState( STATE.Stopped );
 	}
 
@@ -178,8 +185,8 @@ public class Player {
 		mSong = song;
 		updateBuffer(-1);
 
-		for (PlayerListener obj : mPlayerListeners) {
-			obj.onNewSongPlaying(mSong);
+		for ( PlayerListener obj : mPlayerListeners ) {
+			obj.onNewMediaPlaying( (Media) mSong );
 		}
 
 		mPlayer.reset();
@@ -208,7 +215,7 @@ public class Player {
 		updateBuffer(-1);
 
 		for (PlayerListener obj : mPlayerListeners) {
-			obj.onNewVideoPlaying(mVideo);
+			obj.onNewMediaPlaying( (Media) mVideo );
 		}
 
 		mPlayer.reset();
@@ -342,11 +349,15 @@ public class Player {
 		}
 
 		public void onSeekComplete( MediaPlayer mp ) {
-			// TODO
+			for ( PlayerListener obj : mPlayerListeners ) {
+				obj.onSeek( mp.getCurrentPosition() );
+			}
 		}
 
 		public void onVideoSizeChanged( MediaPlayer mp, int width, int height ) {
-			// TODO
+			for ( PlayerListener obj : mPlayerListeners ) {
+				obj.onVideoSizeChanged( width, height );
+			}
 		}
 	}
 
